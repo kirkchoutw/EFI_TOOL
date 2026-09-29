@@ -1,0 +1,152 @@
+BIOS EFI DEBUG TOOLKIT
+
+Open-source UEFI Shell toolkit for firmware developers to
+inspect, diagnose, and collect system information.
+
+PROJECT GOAL
+
+Provide a lightweight, read-only EFI toolkit for common
+BIOS/UEFI debugging tasks.
+
+CORE FEATURES
+
+[ ] System Information
+[ ] Boot / Boot Option Information
+[ ] PCI / PCIe Inspection
+[ ] Memory Map Inspection
+[ ] UEFI Variable Inspection
+[ ] Handle / Protocol Inspection
+[ ] Device Path Decoder
+[ ] ACPI Inspection
+[ ] SMBIOS Inspection
+[ ] CPU Information
+[ ] Secure Boot / TPM Information
+[ ] Diagnostic Data Collection
+[ ] TXT / CSV / JSON Output
+
+MVP
+
+[ ] BDT command framework
+[ ] Help / Version
+[ ] System information
+[ ] PCI enumeration
+[ ] Memory map
+[ ] UEFI variable list
+[ ] Handle / protocol list
+[ ] ACPI table list
+[ ] SMBIOS dump
+[ ] Basic diagnostic collection
+[ ] JSON output
+
+COMMAND EXAMPLES
+
+BDT.efi system
+
+BDT.efi pci list
+BDT.efi pci dump <BDF>
+
+BDT.efi memory map
+
+BDT.efi var list
+BDT.efi var get <name> <guid>
+
+BDT.efi handle list
+BDT.efi protocol list
+
+BDT.efi acpi list
+BDT.efi acpi dump <table>
+
+BDT.efi smbios dump
+
+BDT.efi security secureboot
+
+BDT.efi collect --full
+
+PROJECT STRUCTURE
+
+BdtPkg/
+Application/
+Bdt/
+Library/
+BdtLib/
+BdtOutputLib/
+BdtPciLib/
+BdtMemoryLib/
+BdtVariableLib/
+BdtHandleLib/
+BdtAcpiLib/
+BdtSmbiosLib/
+BdtCpuLib/
+BdtSecurityLib/
+
+DEVELOPMENT PHASES
+
+Phase 1
+Core framework + basic system information
+
+Phase 2
+PCI / Memory / Variable / Handle / ACPI / SMBIOS
+
+Phase 3
+CPU / Security / Device Path / Advanced inspection
+
+Phase 4
+Diagnostic collection + JSON
+
+Phase 5
+PC-side analyzer + automated reports
+
+DESIGN PRINCIPLES
+
+Read-only by default
+
+Standard UEFI interfaces
+
+Portable
+
+Minimal dependencies
+
+Safe error handling
+
+Machine-readable output
+
+No proprietary platform dependencies
+
+OUT OF SCOPE
+
+Firmware flashing
+
+Firmware modification
+
+Security bypass
+
+Platform-specific secrets
+
+Proprietary debug interfaces
+
+LONG-TERM VISION
+
+UEFI
+|
+v
+BDT.efi
+|
+v
+Diagnostic Package
+|
++-- TXT
++-- JSON
++-- CSV
+|
+v
+PC-side Analyzer
+|
+v
+Diagnostic Report
+
+STATUS
+
+Current Version: 0.1
+
+Primary Focus:
+Build the core framework and MVP commands first.
