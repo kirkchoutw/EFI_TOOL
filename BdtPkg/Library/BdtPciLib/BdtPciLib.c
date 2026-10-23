@@ -45,21 +45,6 @@
 #define PCIE_EXT_CAP_ID_AER    0x0001
 
 typedef struct {
-  EFI_HANDLE             Handle;
-  EFI_PCI_IO_PROTOCOL    *PciIo;
-  BDT_PCI_ADDRESS        Address;
-  UINT16                 VendorId;
-  UINT16                 DeviceId;
-  UINT8                  BaseClass;
-  UINT8                  SubClass;
-  UINT8                  ProgIf;
-  UINT8                  Revision;
-  UINT8                  HeaderType;
-  UINT8                  SecondaryBus;     ///< Bridges only.
-  UINT8                  SubordinateBus;   ///< Bridges only.
-} BDT_PCI_DEVICE;
-
-typedef struct {
   UINT8           BaseClass;
   UINT8           SubClass;    ///< 0xFF = any
   CONST CHAR16    *Name;
@@ -295,7 +280,7 @@ CompareAddress (
 STATIC
 EFI_STATUS
 GetDevices (
-  OUT BDT_PCI_DEVICE  **Devices,
+  OUT BDT_PCI_INFO  **Devices,
   OUT UINTN           *Count
   )
 {
@@ -310,8 +295,8 @@ GetDevices (
   UINTN                Func;
   UINT32               Header[4];
   UINT32               BusNumbers;
-  BDT_PCI_DEVICE       *List;
-  BDT_PCI_DEVICE       Temp;
+  BDT_PCI_INFO       *List;
+  BDT_PCI_INFO       Temp;
   UINTN                Inner;
   EFI_PCI_IO_PROTOCOL  *PciIo;
 
@@ -323,7 +308,7 @@ GetDevices (
     return Status;
   }
 
-  List = AllocateZeroPool (HandleCount * sizeof (BDT_PCI_DEVICE));
+  List = AllocateZeroPool (HandleCount * sizeof (BDT_PCI_INFO));
   if (List == NULL) {
     FreePool (Handles);
     return EFI_OUT_OF_RESOURCES;
@@ -393,8 +378,8 @@ STATIC
 EFI_STATUS
 FindDevice (
   IN  CONST BDT_PCI_ADDRESS  *Address,
-  OUT BDT_PCI_DEVICE         **Devices,
-  OUT BDT_PCI_DEVICE         **Device
+  OUT BDT_PCI_INFO         **Devices,
+  OUT BDT_PCI_INFO         **Device
   )
 {
   EFI_STATUS  Status;
@@ -445,7 +430,7 @@ FormatBdf (
 STATIC
 UINT32
 ReadConfig32 (
-  IN BDT_PCI_DEVICE  *Device,
+  IN BDT_PCI_INFO  *Device,
   IN UINT32          Offset
   )
 {
@@ -461,7 +446,7 @@ ReadConfig32 (
 STATIC
 UINT16
 ReadConfig16 (
-  IN BDT_PCI_DEVICE  *Device,
+  IN BDT_PCI_INFO  *Device,
   IN UINT32          Offset
   )
 {
@@ -477,7 +462,7 @@ ReadConfig16 (
 STATIC
 UINT8
 ReadConfig8 (
-  IN BDT_PCI_DEVICE  *Device,
+  IN BDT_PCI_INFO  *Device,
   IN UINT32          Offset
   )
 {
@@ -496,7 +481,7 @@ ReadConfig8 (
 STATIC
 UINT8
 FindCapability (
-  IN BDT_PCI_DEVICE  *Device,
+  IN BDT_PCI_INFO  *Device,
   IN UINT8           CapId
   )
 {
@@ -529,7 +514,7 @@ FindCapability (
 STATIC
 UINT32
 FindExtCapability (
-  IN BDT_PCI_DEVICE  *Device,
+  IN BDT_PCI_INFO  *Device,
   IN UINT16          CapId
   )
 {
@@ -612,7 +597,7 @@ BdtPciGetDeviceCount (
   )
 {
   EFI_STATUS      Status;
-  BDT_PCI_DEVICE  *Devices;
+  BDT_PCI_INFO  *Devices;
 
   Status = GetDevices (&Devices, Count);
   if (Devices != NULL) {
@@ -638,7 +623,7 @@ BdtPciList (
     { L"description", L"Description",  0  },
   };
   EFI_STATUS      Status;
-  BDT_PCI_DEVICE  *Devices;
+  BDT_PCI_INFO  *Devices;
   UINTN           Count;
   UINTN           Index;
   CHAR16          Bdf[20];
@@ -672,13 +657,13 @@ BdtPciList (
 STATIC
 VOID
 TreeNode (
-  IN BDT_PCI_DEVICE  *Devices,
+  IN BDT_PCI_INFO  *Devices,
   IN UINTN           Count,
   IN UINTN           Index,
   IN UINTN           Depth
   )
 {
-  BDT_PCI_DEVICE  *Device;
+  BDT_PCI_INFO  *Device;
   UINTN           Child;
   BOOLEAN         IsBridge;
   CHAR16          Bdf[20];
@@ -732,7 +717,7 @@ BdtPciTree (
   )
 {
   EFI_STATUS      Status;
-  BDT_PCI_DEVICE  *Devices;
+  BDT_PCI_INFO  *Devices;
   UINTN           Count;
   UINTN           Index;
   UINTN           Bridge;
@@ -776,8 +761,8 @@ BdtPciDump (
   )
 {
   EFI_STATUS      Status;
-  BDT_PCI_DEVICE  *Devices;
-  BDT_PCI_DEVICE  *Device;
+  BDT_PCI_INFO  *Devices;
+  BDT_PCI_INFO  *Device;
   UINT8           *Config;
   UINTN           Size;
   CHAR16          Bdf[20];
@@ -837,8 +822,8 @@ BdtPciCap (
     { L"name",    L"Name",   0  },
   };
   EFI_STATUS      Status;
-  BDT_PCI_DEVICE  *Devices;
-  BDT_PCI_DEVICE  *Device;
+  BDT_PCI_INFO  *Devices;
+  BDT_PCI_INFO  *Device;
   UINT32          Offset;
   UINT32          Header;
   UINT8           CapId;
@@ -915,8 +900,8 @@ BdtPciBar (
     { L"size",         L"Size",    0  },
   };
   EFI_STATUS                         Status;
-  BDT_PCI_DEVICE                     *Devices;
-  BDT_PCI_DEVICE                     *Device;
+  BDT_PCI_INFO                     *Devices;
+  BDT_PCI_INFO                     *Device;
   UINTN                              BarCount;
   UINTN                              Bar;
   UINT32                             Raw;
@@ -1007,8 +992,8 @@ BdtPciLink (
   )
 {
   EFI_STATUS      Status;
-  BDT_PCI_DEVICE  *Devices;
-  BDT_PCI_DEVICE  *Device;
+  BDT_PCI_INFO  *Devices;
+  BDT_PCI_INFO  *Device;
   UINT8           Cap;
   UINT16          CapReg;
   UINT32          LinkCap;
@@ -1081,7 +1066,7 @@ BdtPciLink (
 STATIC
 VOID
 AerDetail (
-  IN BDT_PCI_DEVICE  *Device,
+  IN BDT_PCI_INFO  *Device,
   IN UINT32          Aer
   )
 {
@@ -1141,8 +1126,8 @@ BdtPciAer (
     { L"result",        L"Result",        0  },
   };
   EFI_STATUS      Status;
-  BDT_PCI_DEVICE  *Devices;
-  BDT_PCI_DEVICE  *Device;
+  BDT_PCI_INFO  *Devices;
+  BDT_PCI_INFO  *Device;
   UINTN           Count;
   UINTN           Index;
   UINT32          Aer;
@@ -1214,8 +1199,8 @@ BdtPciReadRegister (
   )
 {
   EFI_STATUS      Status;
-  BDT_PCI_DEVICE  *Devices;
-  BDT_PCI_DEVICE  *Device;
+  BDT_PCI_INFO  *Devices;
+  BDT_PCI_INFO  *Device;
   UINT32          Value;
   CHAR16          Bdf[20];
 
@@ -1249,4 +1234,237 @@ BdtPciReadRegister (
 
   FreePool (Devices);
   return Status;
+}
+
+EFI_STATUS
+EFIAPI
+BdtPciGetList (
+  OUT BDT_PCI_INFO  **List,
+  OUT UINTN         *Count
+  )
+{
+  return GetDevices (List, Count);
+}
+
+CONST CHAR16 *
+EFIAPI
+BdtPciClassName (
+  IN UINT8  BaseClass,
+  IN UINT8  SubClass
+  )
+{
+  return ClassName (BaseClass, SubClass);
+}
+
+UINTN
+EFIAPI
+BdtPciConfigSize (
+  IN BDT_PCI_INFO  *Info
+  )
+{
+  return (FindCapability (Info, EFI_PCI_CAPABILITY_ID_PCIEXP) != 0) ? PCIE_CFG_SIZE : PCI_CFG_SIZE;
+}
+
+EFI_STATUS
+EFIAPI
+BdtPciConfigRead (
+  IN  BDT_PCI_INFO  *Info,
+  IN  UINT32        Offset,
+  IN  UINTN         Width,
+  IN  UINTN         Count,
+  OUT VOID          *Buffer
+  )
+{
+  EFI_PCI_IO_PROTOCOL_WIDTH  IoWidth;
+
+  switch (Width) {
+    case 1:
+      IoWidth = EfiPciIoWidthUint8;
+      break;
+    case 2:
+      IoWidth = EfiPciIoWidthUint16;
+      break;
+    case 4:
+      IoWidth = EfiPciIoWidthUint32;
+      break;
+    default:
+      return EFI_INVALID_PARAMETER;
+  }
+
+  if (((Offset & (Width - 1)) != 0) || (Offset + Width * Count > PCIE_CFG_SIZE)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  return Info->PciIo->Pci.Read (Info->PciIo, IoWidth, Offset, Count, Buffer);
+}
+
+typedef struct {
+  UINT8           Offset;
+  UINT8           Size;
+  CONST CHAR16    *Name;
+} BDT_PCI_FIELD;
+
+STATIC CONST BDT_PCI_FIELD  mCommonFields[] = {
+  { 0x00, 2, L"Vendor ID"       },
+  { 0x02, 2, L"Device ID"       },
+  { 0x04, 2, L"Command"         },
+  { 0x06, 2, L"Status"          },
+  { 0x08, 1, L"Revision ID"     },
+  { 0x09, 1, L"Prog Interface"  },
+  { 0x0A, 1, L"Sub Class"       },
+  { 0x0B, 1, L"Base Class"      },
+  { 0x0C, 1, L"Cache Line Size" },
+  { 0x0D, 1, L"Latency Timer"   },
+  { 0x0E, 1, L"Header Type"     },
+  { 0x0F, 1, L"BIST"            },
+  { 0x10, 4, L"BAR0"            },
+  { 0x14, 4, L"BAR1"            },
+  { 0x34, 1, L"Capabilities Pointer" },
+  { 0x3C, 1, L"Interrupt Line"  },
+  { 0x3D, 1, L"Interrupt Pin"   },
+};
+
+STATIC CONST BDT_PCI_FIELD  mType0Fields[] = {
+  { 0x18, 4, L"BAR2"                  },
+  { 0x1C, 4, L"BAR3"                  },
+  { 0x20, 4, L"BAR4"                  },
+  { 0x24, 4, L"BAR5"                  },
+  { 0x28, 4, L"CardBus CIS Pointer"   },
+  { 0x2C, 2, L"Subsystem Vendor ID"   },
+  { 0x2E, 2, L"Subsystem ID"          },
+  { 0x30, 4, L"Expansion ROM Base"    },
+  { 0x3E, 1, L"Min Grant"             },
+  { 0x3F, 1, L"Max Latency"           },
+};
+
+STATIC CONST BDT_PCI_FIELD  mType1Fields[] = {
+  { 0x18, 1, L"Primary Bus"           },
+  { 0x19, 1, L"Secondary Bus"         },
+  { 0x1A, 1, L"Subordinate Bus"       },
+  { 0x1B, 1, L"Secondary Latency"     },
+  { 0x1C, 1, L"I/O Base"              },
+  { 0x1D, 1, L"I/O Limit"             },
+  { 0x1E, 2, L"Secondary Status"      },
+  { 0x20, 2, L"Memory Base"           },
+  { 0x22, 2, L"Memory Limit"          },
+  { 0x24, 2, L"Prefetchable Base"     },
+  { 0x26, 2, L"Prefetchable Limit"    },
+  { 0x28, 4, L"Prefetchable Base Upper 32" },
+  { 0x2C, 4, L"Prefetchable Limit Upper 32" },
+  { 0x30, 2, L"I/O Base Upper 16"     },
+  { 0x32, 2, L"I/O Limit Upper 16"    },
+  { 0x38, 4, L"Expansion ROM Base"    },
+  { 0x3E, 2, L"Bridge Control"        },
+};
+
+STATIC
+CONST CHAR16 *
+FieldName (
+  IN CONST BDT_PCI_FIELD  *Fields,
+  IN UINTN                Count,
+  IN UINT32               Offset
+  )
+{
+  UINTN  Index;
+
+  for (Index = 0; Index < Count; Index++) {
+    if ((Offset >= Fields[Index].Offset) && (Offset < (UINT32)Fields[Index].Offset + Fields[Index].Size)) {
+      return Fields[Index].Name;
+    }
+  }
+
+  return NULL;
+}
+
+VOID
+EFIAPI
+BdtPciDescribeRegister (
+  IN  BDT_PCI_INFO  *Info,
+  IN  UINT32        Offset,
+  OUT CHAR16        *Buffer,
+  IN  UINTN         BufferSize
+  )
+{
+  CONST CHAR16  *Name;
+  UINT32        Cap;
+  UINT32        Next;
+  UINT32        Header;
+  UINTN         Walk;
+
+  Buffer[0] = L'\0';
+  if (Offset < 0x40) {
+    Name = FieldName (mCommonFields, ARRAY_SIZE (mCommonFields), Offset);
+    if (Name == NULL) {
+      if ((Info->HeaderType & HEADER_LAYOUT_CODE) == HEADER_TYPE_PCI_TO_PCI_BRIDGE) {
+        Name = FieldName (mType1Fields, ARRAY_SIZE (mType1Fields), Offset);
+      } else if ((Info->HeaderType & HEADER_LAYOUT_CODE) == HEADER_TYPE_DEVICE) {
+        Name = FieldName (mType0Fields, ARRAY_SIZE (mType0Fields), Offset);
+      }
+    }
+
+    StrCpyS (Buffer, BufferSize / sizeof (CHAR16), (Name != NULL) ? Name : L"Reserved");
+    return;
+  }
+
+  //
+  // Standard capabilities: the capability containing Offset is the one with
+  // the highest start below Offset.
+  //
+  if (Offset < 0x100) {
+    if ((ReadConfig16 (Info, PCI_PRIMARY_STATUS_OFFSET) & EFI_PCI_STATUS_CAPABILITY) == 0) {
+      return;
+    }
+
+    Cap  = 0;
+    Next = ReadConfig8 (Info, PCI_CAPBILITY_POINTER_OFFSET);
+    for (Walk = 0; Walk < PCI_CAP_MAX_WALK && Next >= 0x40 && Next != 0xFF; Walk++) {
+      Next &= 0xFC;
+      if ((Next <= Offset) && (Next > Cap)) {
+        Cap = Next;
+      }
+
+      Next = ReadConfig8 (Info, Next + 1);
+    }
+
+    if (Cap != 0) {
+      UnicodeSPrint (
+        Buffer,
+        BufferSize,
+        L"%s capability +0x%02x",
+        IdName (mCapNames, ARRAY_SIZE (mCapNames), ReadConfig8 (Info, Cap)),
+        Offset - Cap
+        );
+    }
+
+    return;
+  }
+
+  if (FindCapability (Info, EFI_PCI_CAPABILITY_ID_PCIEXP) == 0) {
+    return;
+  }
+
+  Cap  = 0;
+  Next = 0x100;
+  for (Walk = 0; Walk < PCIE_EXT_CAP_MAX_WALK && Next >= 0x100; Walk++) {
+    Header = ReadConfig32 (Info, Next);
+    if ((Header == 0) || (Header == MAX_UINT32)) {
+      break;
+    }
+
+    if ((Next <= Offset) && (Next > Cap)) {
+      Cap = Next;
+    }
+
+    Next = (Header >> 20) & 0xFFC;
+  }
+
+  if (Cap != 0) {
+    UnicodeSPrint (
+      Buffer,
+      BufferSize,
+      L"%s +0x%03x",
+      IdName (mExtCapNames, ARRAY_SIZE (mExtCapNames), (UINT16)(ReadConfig32 (Info, Cap) & 0xFFFF)),
+      Offset - Cap
+      );
+  }
 }

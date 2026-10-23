@@ -8,6 +8,8 @@
 #include <BdtCommon.h>
 #include <Library/IoLib.h>
 #include <Library/BdtMemoryLib.h>
+#include <Protocol/Cpu.h>
+#include <Protocol/DebugSupport.h>
 
 #define BDT_MEMORY_DUMP_MAX     SIZE_1MB
 #define BDT_MMIO_READ_MAX       SIZE_4KB
@@ -518,5 +520,143 @@ BdtMmioRead (
   }
 
   BdtOutTableEnd ();
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+EFIAPI
+BdtMemoryGetMap (
+  OUT EFI_MEMORY_DESCRIPTOR  **Map,
+  OUT UINTN                  *MapSize,
+  OUT UINTN                  *DescriptorSize
+  )
+{
+  return GetMemoryMapCopy (Map, MapSize, DescriptorSize, NULL);
+}
+
+CONST CHAR16 *
+EFIAPI
+BdtMemoryTypeName (
+  IN UINT32  Type
+  )
+{
+  return MemoryTypeName (Type);
+}
+
+//
+// Fault guard for BdtMemorySafeRead: #PF / #GP handlers redirect execution to
+// FaultRecover, which long-jumps back to the read loop.
+//
+STATIC BASE_LIBRARY_JUMP_BUFFER  mFaultJump;
+STATIC volatile BOOLEAN          mFaultGuard = FALSE;
+
+STATIC
+VOID
+FaultRecover (
+  VOID
+  )
+{
+  LongJump (&mFaultJump, 1);
+}
+
+STATIC
+VOID
+EFIAPI
+FaultHandler (
+  IN     EFI_EXCEPTION_TYPE  ExceptionType,
+  IN OUT EFI_SYSTEM_CONTEXT  SystemContext
+  )
+{
+  if (!mFaultGuard) {
+    CpuDeadLoop ();
+  }
+
+  mFaultGuard = FALSE;
+ #if defined (MDE_CPU_X64)
+  SystemContext.SystemContextX64->Rip = (UINT64)(UINTN)FaultRecover;
+ #elif defined (MDE_CPU_IA32)
+  SystemContext.SystemContextIa32->Eip = (UINT32)(UINTN)FaultRecover;
+ #else
+  CpuDeadLoop ();
+ #endif
+}
+
+EFI_STATUS
+EFIAPI
+BdtMemorySafeRead (
+  IN  UINT64   Address,
+  IN  UINTN    Width,
+  IN  UINTN    Count,
+  OUT VOID     *Buffer,
+  OUT BOOLEAN  *Valid OPTIONAL,
+  OUT BOOLEAN  *Protected OPTIONAL
+  )
+{
+  EFI_CPU_ARCH_PROTOCOL  *Cpu;
+  BOOLEAN                GuardPf;
+  BOOLEAN                GuardGp;
+  volatile UINTN         Index;
+  UINTN                  Addr;
+  UINT8                  *Out;
+
+  if (((Width != 1) && (Width != 2) && (Width != 4) && (Width != 8)) || ((Address & (Width - 1)) != 0) ||
+      (Count == 0) || (Address + Width * Count - 1 < Address) || (Address + Width * Count - 1 > MAX_ADDRESS))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  GuardPf = FALSE;
+  GuardGp = FALSE;
+  if (!EFI_ERROR (gBS->LocateProtocol (&gEfiCpuArchProtocolGuid, NULL, (VOID **)&Cpu))) {
+    GuardPf = !EFI_ERROR (Cpu->RegisterInterruptHandler (Cpu, EXCEPT_IA32_PAGE_FAULT, FaultHandler));
+    GuardGp = !EFI_ERROR (Cpu->RegisterInterruptHandler (Cpu, EXCEPT_IA32_GP_FAULT, FaultHandler));
+  }
+
+  Out = (UINT8 *)Buffer;
+  for (Index = 0; Index < Count; Index++) {
+    Addr = (UINTN)(Address + Index * Width);
+    if (SetJump (&mFaultJump) != 0) {
+      SetMem (Out + Index * Width, Width, 0xFF);
+      if (Valid != NULL) {
+        Valid[Index] = FALSE;
+      }
+
+      continue;
+    }
+
+    mFaultGuard = TRUE;
+    switch (Width) {
+      case 1:
+        Out[Index] = MmioRead8 (Addr);
+        break;
+      case 2:
+        WriteUnaligned16 ((UINT16 *)(Out + Index * 2), MmioRead16 (Addr));
+        break;
+      case 4:
+        WriteUnaligned32 ((UINT32 *)(Out + Index * 4), MmioRead32 (Addr));
+        break;
+      default:
+        WriteUnaligned64 ((UINT64 *)(Out + Index * 8), MmioRead64 (Addr));
+        break;
+    }
+
+    mFaultGuard = FALSE;
+    if (Valid != NULL) {
+      Valid[Index] = TRUE;
+    }
+  }
+
+  if (GuardPf) {
+    Cpu->RegisterInterruptHandler (Cpu, EXCEPT_IA32_PAGE_FAULT, NULL);
+  }
+
+  if (GuardGp) {
+    Cpu->RegisterInterruptHandler (Cpu, EXCEPT_IA32_GP_FAULT, NULL);
+  }
+
+  if (Protected != NULL) {
+    *Protected = GuardPf && GuardGp;
+  }
+
   return EFI_SUCCESS;
 }

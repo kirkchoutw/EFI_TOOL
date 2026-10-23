@@ -30,4 +30,27 @@ EFI_STATUS EFIAPI BdtMemorySearch (IN CONST UINT8 *Pattern, IN UINTN PatternSize
 **/
 EFI_STATUS EFIAPI BdtMmioRead (IN UINT64 Address, IN UINTN Length, IN UINTN Width);
 
+/**
+  Return a copy of the UEFI memory map. Free *Map with FreePool.
+**/
+EFI_STATUS EFIAPI BdtMemoryGetMap (OUT EFI_MEMORY_DESCRIPTOR **Map, OUT UINTN *MapSize, OUT UINTN *DescriptorSize);
+
+CONST CHAR16 * EFIAPI BdtMemoryTypeName (IN UINT32 Type);
+
+/**
+  Read Count units of Width (1, 2, 4 or 8) bytes from Address with MMIO
+  accessors. Page faults and #GP are caught: the unit is filled with 0xFF and
+  Valid[i] (optional) is set to FALSE.
+
+  @param[out] Protected  Optional; TRUE when faults could be caught.
+**/
+EFI_STATUS EFIAPI BdtMemorySafeRead (
+  IN  UINT64   Address,
+  IN  UINTN    Width,
+  IN  UINTN    Count,
+  OUT VOID     *Buffer,
+  OUT BOOLEAN  *Valid OPTIONAL,
+  OUT BOOLEAN  *Protected OPTIONAL
+  );
+
 #endif

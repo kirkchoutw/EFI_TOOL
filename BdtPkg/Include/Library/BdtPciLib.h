@@ -9,6 +9,7 @@
 #define BDT_PCI_LIB_H_
 
 #include <Uefi.h>
+#include <Protocol/PciIo.h>
 
 typedef struct {
   UINT16    Segment;
@@ -16,6 +17,24 @@ typedef struct {
   UINT8     Device;
   UINT8     Function;
 } BDT_PCI_ADDRESS;
+
+///
+/// One PCI function published by the PCI bus driver.
+///
+typedef struct {
+  EFI_HANDLE             Handle;
+  EFI_PCI_IO_PROTOCOL    *PciIo;
+  BDT_PCI_ADDRESS        Address;
+  UINT16                 VendorId;
+  UINT16                 DeviceId;
+  UINT8                  BaseClass;
+  UINT8                  SubClass;
+  UINT8                  ProgIf;
+  UINT8                  Revision;
+  UINT8                  HeaderType;
+  UINT8                  SecondaryBus;     ///< Bridges only.
+  UINT8                  SubordinateBus;   ///< Bridges only.
+} BDT_PCI_INFO;
 
 EFI_STATUS EFIAPI BdtPciGetDeviceCount (OUT UINTN *Count);
 
@@ -39,5 +58,27 @@ EFI_STATUS EFIAPI BdtPciAer (IN CONST BDT_PCI_ADDRESS *Address OPTIONAL);
   Read one configuration register (Width = 1, 2 or 4 bytes) and show it.
 **/
 EFI_STATUS EFIAPI BdtPciReadRegister (IN CONST BDT_PCI_ADDRESS *Address, IN UINT32 Offset, IN UINTN Width);
+
+/**
+  Return all PCI functions sorted by address. Free *List with FreePool.
+**/
+EFI_STATUS EFIAPI BdtPciGetList (OUT BDT_PCI_INFO **List, OUT UINTN *Count);
+
+CONST CHAR16 * EFIAPI BdtPciClassName (IN UINT8 BaseClass, IN UINT8 SubClass);
+
+/**
+  Size of the configuration space: 0x1000 for PCI Express, else 0x100.
+**/
+UINTN EFIAPI BdtPciConfigSize (IN BDT_PCI_INFO *Info);
+
+/**
+  Read Count registers of Width (1, 2 or 4) bytes starting at Offset.
+**/
+EFI_STATUS EFIAPI BdtPciConfigRead (IN BDT_PCI_INFO *Info, IN UINT32 Offset, IN UINTN Width, IN UINTN Count, OUT VOID *Buffer);
+
+/**
+  Describe the register at Offset: header field name or capability name.
+**/
+VOID EFIAPI BdtPciDescribeRegister (IN BDT_PCI_INFO *Info, IN UINT32 Offset, OUT CHAR16 *Buffer, IN UINTN BufferSize);
 
 #endif

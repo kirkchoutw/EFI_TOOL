@@ -96,6 +96,11 @@ CONST BDT_COMMAND  gBdtCommands[] = {
     L"collect [--quick | --full] [--output <directory>]",
     BdtCmdCollect
   },
+  {
+    L"ui",         L"Full screen browser (PCI, memory, I/O, MSR, ACPI, SMBIOS, variables)",
+    L"ui",
+    BdtCmdUi
+  },
 };
 
 CONST UINTN  gBdtCommandCount = ARRAY_SIZE (gBdtCommands);

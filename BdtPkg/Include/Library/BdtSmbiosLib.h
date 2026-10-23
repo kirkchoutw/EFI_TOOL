@@ -33,4 +33,16 @@ EFI_STATUS EFIAPI BdtSmbiosList (VOID);
 EFI_STATUS EFIAPI BdtSmbiosDump (IN UINT16 Type);
 EFI_STATUS EFIAPI BdtSmbiosValidate (VOID);
 
+/**
+  Get structure Index (0 based) of the SMBIOS table.
+
+  @param[out] Structure  Start of the structure (formatted area).
+  @param[out] TotalSize  Formatted area plus string set, including the double NULL.
+
+  @retval EFI_NOT_FOUND  Index past the end of the table.
+**/
+EFI_STATUS EFIAPI BdtSmbiosGetStructure (IN UINTN Index, OUT VOID **Structure, OUT UINTN *TotalSize);
+
+CONST CHAR16 * EFIAPI BdtSmbiosTypeName (IN UINT8 Type);
+
 #endif

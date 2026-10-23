@@ -938,3 +938,64 @@ BdtSmbiosValidate (
   BdtOutField (L"Result", L"%s", (Failures == 0) ? L"PASS" : L"FAIL");
   return EFI_SUCCESS;
 }
+
+EFI_STATUS
+EFIAPI
+BdtSmbiosGetStructure (
+  IN  UINTN  Index,
+  OUT VOID   **Structure,
+  OUT UINTN  *TotalSize
+  )
+{
+  BDT_SMBIOS_TABLE  Table;
+  SMBIOS_STRUCTURE  *S;
+  SMBIOS_STRUCTURE  *Next;
+  UINT8             *End;
+  UINTN             Count;
+  EFI_STATUS        Status;
+
+  Status = GetTable (&Table);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  S = NULL;
+  for (Count = 0; Count <= Index && Count < BDT_SMBIOS_MAX_STRUCTURES; Count++) {
+    S = NextStructure (&Table, S);
+    if (S == NULL) {
+      return EFI_NOT_FOUND;
+    }
+  }
+
+  if (S == NULL) {
+    return EFI_NOT_FOUND;
+  }
+
+  //
+  // The structure ends at the double NULL after the string set.
+  //
+  Next = NextStructure (&Table, S);
+  if (Next != NULL) {
+    End = (UINT8 *)Next;
+  } else {
+    End = (UINT8 *)S + S->Length;
+    while (End + 1 < Table.End && (End[0] != 0 || End[1] != 0)) {
+      End++;
+    }
+
+    End = MIN (End + 2, Table.End);
+  }
+
+  *Structure = S;
+  *TotalSize = End - (UINT8 *)S;
+  return EFI_SUCCESS;
+}
+
+CONST CHAR16 *
+EFIAPI
+BdtSmbiosTypeName (
+  IN UINT8  Type
+  )
+{
+  return TypeName (Type);
+}

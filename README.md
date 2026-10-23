@@ -47,7 +47,26 @@ BDT.efi firmware fv | ffs [fv index] | find <guid>
 BDT.efi security secureboot | pk | kek | db | dbx | dbt | dbr | tpm | pcr [index] | tcglog
 BDT.efi io mmio read <address> <length> [width] | pci read <BDF> <offset> [width] | msr read <address>
 BDT.efi collect [--quick | --full] [--output <directory>]
+BDT.efi ui
 ```
+
+### Full screen UI
+
+`BDT.efi ui` opens an RU-style text browser (works on screen and serial console, 80x24 minimum):
+
+| Page | List | Hex view |
+|------|------|----------|
+| 1 PCI | all functions | config space (4 KB for PCIe), register / capability names |
+| 2 Memory | UEFI memory map | physical memory / MMIO, page faults caught |
+| 3 I/O | - | I/O port space with known port names |
+| 4 MSR | common MSRs + `G` to add any index | - (set bits on the status line) |
+| 5 ACPI | all tables | table bytes, header field names |
+| 6 SMBIOS | all structures | formatted area + string set |
+| 7 Variable | all UEFI variables | variable data |
+
+Keys: `1`-`7` / `←` `→` switch page, `Enter` open, `Esc` back / quit, `G` go to address,
+`W` access width (byte / word / dword / qword), `Tab` / `-` next / previous item, `R` refresh.
+The UI is read only.
 
 Global options: `--format text|csv|json` (`-f`), `--output <file>` (`-o`).
 BDF is hex `[seg:]bus:dev.func`; GUIDs are accepted as text or known names

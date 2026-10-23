@@ -35,3 +35,6 @@
   IoLib
   BdtLib
   BdtOutputLib
+
+[Protocols]
+  gEfiCpuArchProtocolGuid                       ## CONSUMES

@@ -45,6 +45,7 @@ EFI_STATUS BdtCmdFirmware   (IN BDT_CONTEXT *Context, IN UINTN Argc, IN CHAR16 *
 EFI_STATUS BdtCmdSecurity   (IN BDT_CONTEXT *Context, IN UINTN Argc, IN CHAR16 **Argv);
 EFI_STATUS BdtCmdIo         (IN BDT_CONTEXT *Context, IN UINTN Argc, IN CHAR16 **Argv);
 EFI_STATUS BdtCmdCollect    (IN BDT_CONTEXT *Context, IN UINTN Argc, IN CHAR16 **Argv);
+EFI_STATUS BdtCmdUi         (IN BDT_CONTEXT *Context, IN UINTN Argc, IN CHAR16 **Argv);
 
 /**
   Emit the "system" summary (no document wrapper).
