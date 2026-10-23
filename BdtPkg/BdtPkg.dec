@@ -1,0 +1,56 @@
+## @file
+#  BIOS EFI Debug Toolkit (BDT) package declaration.
+#
+#  Copyright (c) 2026, Kirk Chou. All rights reserved.<BR>
+#  SPDX-License-Identifier: MIT
+##
+
+[Defines]
+  DEC_SPECIFICATION              = 0x00010017
+  PACKAGE_NAME                   = BdtPkg
+  PACKAGE_GUID                   = 40392CBD-5B45-45F7-8A15-C5E04C98AE21
+  PACKAGE_VERSION                = 0.1
+
+[Includes]
+  Include
+
+[LibraryClasses]
+  ##  @libraryclass  BdtLib
+  BdtLib                    |Include/Library/BdtLib.h
+
+  ##  @libraryclass  BdtOutputLib
+  BdtOutputLib              |Include/Library/BdtOutputLib.h
+
+  ##  @libraryclass  BdtFileLib
+  BdtFileLib                |Include/Library/BdtFileLib.h
+
+  ##  @libraryclass  BdtPciLib
+  BdtPciLib                 |Include/Library/BdtPciLib.h
+
+  ##  @libraryclass  BdtMemoryLib
+  BdtMemoryLib              |Include/Library/BdtMemoryLib.h
+
+  ##  @libraryclass  BdtVariableLib
+  BdtVariableLib            |Include/Library/BdtVariableLib.h
+
+  ##  @libraryclass  BdtHandleLib
+  BdtHandleLib              |Include/Library/BdtHandleLib.h
+
+  ##  @libraryclass  BdtAcpiLib
+  BdtAcpiLib                |Include/Library/BdtAcpiLib.h
+
+  ##  @libraryclass  BdtSmbiosLib
+  BdtSmbiosLib              |Include/Library/BdtSmbiosLib.h
+
+  ##  @libraryclass  BdtCpuLib
+  BdtCpuLib                 |Include/Library/BdtCpuLib.h
+
+  ##  @libraryclass  BdtSecurityLib
+  BdtSecurityLib            |Include/Library/BdtSecurityLib.h
+
+  ##  @libraryclass  BdtBootLib
+  BdtBootLib                |Include/Library/BdtBootLib.h
+
+  ##  @libraryclass  BdtFirmwareLib
+  BdtFirmwareLib            |Include/Library/BdtFirmwareLib.h
+

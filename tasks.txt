@@ -10,33 +10,33 @@ BIOS/UEFI debugging tasks.
 
 CORE FEATURES
 
-[ ] System Information
-[ ] Boot / Boot Option Information
-[ ] PCI / PCIe Inspection
-[ ] Memory Map Inspection
-[ ] UEFI Variable Inspection
-[ ] Handle / Protocol Inspection
-[ ] Device Path Decoder
-[ ] ACPI Inspection
-[ ] SMBIOS Inspection
-[ ] CPU Information
-[ ] Secure Boot / TPM Information
-[ ] Diagnostic Data Collection
-[ ] TXT / CSV / JSON Output
+[x] System Information
+[x] Boot / Boot Option Information
+[x] PCI / PCIe Inspection
+[x] Memory Map Inspection
+[x] UEFI Variable Inspection
+[x] Handle / Protocol Inspection
+[x] Device Path Decoder
+[x] ACPI Inspection
+[x] SMBIOS Inspection
+[x] CPU Information
+[x] Secure Boot / TPM Information
+[x] Diagnostic Data Collection
+[x] TXT / CSV / JSON Output
 
 MVP
 
-[ ] BDT command framework
-[ ] Help / Version
-[ ] System information
-[ ] PCI enumeration
-[ ] Memory map
-[ ] UEFI variable list
-[ ] Handle / protocol list
-[ ] ACPI table list
-[ ] SMBIOS dump
-[ ] Basic diagnostic collection
-[ ] JSON output
+[x] BDT command framework
+[x] Help / Version
+[x] System information
+[x] PCI enumeration
+[x] Memory map
+[x] UEFI variable list
+[x] Handle / protocol list
+[x] ACPI table list
+[x] SMBIOS dump
+[x] Basic diagnostic collection
+[x] JSON output
 
 COMMAND EXAMPLES
 

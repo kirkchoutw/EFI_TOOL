@@ -1,0 +1,45 @@
+## @file
+#  BdtSecurityLib - Secure Boot / TPM 2.0 inspection.
+#
+#  Copyright (c) 2026, Kirk Chou. All rights reserved.<BR>
+#  SPDX-License-Identifier: MIT
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010017
+  BASE_NAME                      = BdtSecurityLib
+  FILE_GUID                      = 3F69E853-BF20-408E-AC4F-39B8F5AF9E49
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 0.1
+  LIBRARY_CLASS                  = BdtSecurityLib|UEFI_APPLICATION UEFI_DRIVER DXE_DRIVER
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 ARM AARCH64 RISCV64 LOONGARCH64
+#
+
+[Sources]
+  BdtSecurityLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ShellPkg/ShellPkg.dec
+  BdtPkg/BdtPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  PrintLib
+  UefiLib
+  UefiBootServicesTableLib
+  UefiRuntimeServicesTableLib
+  BdtLib
+  BdtOutputLib
+
+[Guids]
+  gEfiGlobalVariableGuid                        ## CONSUMES ## Variable
+  gEfiImageSecurityDatabaseGuid                 ## CONSUMES ## Variable
+  gEfiCertX509Guid                              ## CONSUMES ## GUID
+
+[Protocols]
+  gEfiTcg2ProtocolGuid                          ## CONSUMES

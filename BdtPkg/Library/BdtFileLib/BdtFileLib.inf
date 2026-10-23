@@ -1,0 +1,32 @@
+## @file
+#  BdtFileLib - File and directory helpers on top of the UEFI Shell.
+#
+#  Copyright (c) 2026, Kirk Chou. All rights reserved.<BR>
+#  SPDX-License-Identifier: MIT
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010017
+  BASE_NAME                      = BdtFileLib
+  FILE_GUID                      = B75B2F01-FF35-4580-877E-537BB3DF8E86
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 0.1
+  LIBRARY_CLASS                  = BdtFileLib|UEFI_APPLICATION UEFI_DRIVER DXE_DRIVER
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 ARM AARCH64 RISCV64 LOONGARCH64
+#
+
+[Sources]
+  BdtFileLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ShellPkg/ShellPkg.dec
+  BdtPkg/BdtPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  MemoryAllocationLib
+  ShellLib
+  FileHandleLib

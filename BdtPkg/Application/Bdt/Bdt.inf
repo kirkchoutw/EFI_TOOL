@@ -1,0 +1,55 @@
+## @file
+#  BDT.efi - BIOS EFI Debug Toolkit UEFI Shell application.
+#
+#  Copyright (c) 2026, Kirk Chou. All rights reserved.<BR>
+#  SPDX-License-Identifier: MIT
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010017
+  BASE_NAME                      = Bdt
+  FILE_GUID                      = 6F0B0C8A-5B8E-4B8B-9D1E-2C4B0D7E9A11
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 0.1
+  ENTRY_POINT                    = ShellCEntryLib
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Sources]
+  BdtInternal.h
+  Bdt.c
+  BdtCommands.c
+  BdtSystem.c
+  BdtCollect.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ShellPkg/ShellPkg.dec
+  BdtPkg/BdtPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  PrintLib
+  ShellCEntryLib
+  ShellLib
+  UefiApplicationEntryPoint
+  UefiBootServicesTableLib
+  UefiLib
+  UefiRuntimeServicesTableLib
+  BdtLib
+  BdtOutputLib
+  BdtFileLib
+  BdtPciLib
+  BdtMemoryLib
+  BdtVariableLib
+  BdtHandleLib
+  BdtAcpiLib
+  BdtSmbiosLib
+  BdtCpuLib
+  BdtSecurityLib
+  BdtBootLib
+  BdtFirmwareLib

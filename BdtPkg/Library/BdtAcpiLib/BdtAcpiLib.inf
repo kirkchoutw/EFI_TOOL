@@ -1,0 +1,40 @@
+## @file
+#  BdtAcpiLib - ACPI table inspection.
+#
+#  Copyright (c) 2026, Kirk Chou. All rights reserved.<BR>
+#  SPDX-License-Identifier: MIT
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010017
+  BASE_NAME                      = BdtAcpiLib
+  FILE_GUID                      = 0B308CD8-560D-46E7-AE12-5E868AA73E17
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 0.1
+  LIBRARY_CLASS                  = BdtAcpiLib|UEFI_APPLICATION UEFI_DRIVER DXE_DRIVER
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 ARM AARCH64 RISCV64 LOONGARCH64
+#
+
+[Sources]
+  BdtAcpiLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ShellPkg/ShellPkg.dec
+  BdtPkg/BdtPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  PrintLib
+  UefiLib
+  BdtLib
+  BdtOutputLib
+  BdtFileLib
+
+[Guids]
+  gEfiAcpi20TableGuid                           ## CONSUMES ## SystemTable
+  gEfiAcpi10TableGuid                           ## CONSUMES ## SystemTable

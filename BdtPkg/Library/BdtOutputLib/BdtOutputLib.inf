@@ -1,0 +1,35 @@
+## @file
+#  BdtOutputLib - Structured output in TEXT / CSV / JSON.
+#
+#  Copyright (c) 2026, Kirk Chou. All rights reserved.<BR>
+#  SPDX-License-Identifier: MIT
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010017
+  BASE_NAME                      = BdtOutputLib
+  FILE_GUID                      = 21B21633-B6DA-4D90-95BF-43F55B684619
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 0.1
+  LIBRARY_CLASS                  = BdtOutputLib|UEFI_APPLICATION UEFI_DRIVER DXE_DRIVER
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 ARM AARCH64 RISCV64 LOONGARCH64
+#
+
+[Sources]
+  BdtOutputLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ShellPkg/ShellPkg.dec
+  BdtPkg/BdtPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  PrintLib
+  UefiLib
+  UefiBootServicesTableLib
+  ShellLib
+  BdtLib

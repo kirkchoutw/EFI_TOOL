@@ -1,0 +1,44 @@
+## @file
+#  BdtHandleLib - Handle / protocol / device path inspection.
+#
+#  Copyright (c) 2026, Kirk Chou. All rights reserved.<BR>
+#  SPDX-License-Identifier: MIT
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010017
+  BASE_NAME                      = BdtHandleLib
+  FILE_GUID                      = 3A944A6C-7690-4DA5-AE64-6825FBECCD0F
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 0.1
+  LIBRARY_CLASS                  = BdtHandleLib|UEFI_APPLICATION UEFI_DRIVER DXE_DRIVER
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 ARM AARCH64 RISCV64 LOONGARCH64
+#
+
+[Sources]
+  BdtHandleLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ShellPkg/ShellPkg.dec
+  BdtPkg/BdtPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  PrintLib
+  UefiLib
+  UefiBootServicesTableLib
+  DevicePathLib
+  BdtLib
+  BdtOutputLib
+
+[Protocols]
+  gEfiDevicePathProtocolGuid                    ## CONSUMES
+  gEfiLoadedImageProtocolGuid                   ## CONSUMES
+  gEfiComponentName2ProtocolGuid                ## CONSUMES
+  gEfiComponentNameProtocolGuid                 ## CONSUMES
+  gEfiDriverBindingProtocolGuid                 ## CONSUMES
