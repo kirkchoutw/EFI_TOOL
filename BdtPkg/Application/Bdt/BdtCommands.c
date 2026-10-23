@@ -715,9 +715,91 @@ BdtCmdSecurity (
 
 //
 // ---------------------------------------------------------------------------
-// io (read only)
+// io: raw register access. Writes need "--force" or an interactive "y".
 // ---------------------------------------------------------------------------
 //
+
+/**
+  Ask the user to confirm a hardware write on the console.
+**/
+STATIC
+BOOLEAN
+ConfirmWrite (
+  IN CONST CHAR16  *Target,
+  IN UINT64        Value
+  )
+{
+  EFI_INPUT_KEY  Key;
+  UINTN          Index;
+
+  ShellPrintEx (-1, -1, L"Write 0x%lx to %s? [y/N] ", Value, Target);
+  while (TRUE) {
+    gBS->WaitForEvent (1, &gST->ConIn->WaitForKey, &Index);
+    if (!EFI_ERROR (gST->ConIn->ReadKeyStroke (gST->ConIn, &Key))) {
+      break;
+    }
+  }
+
+  ShellPrintEx (-1, -1, L"%c\r\n", (Key.UnicodeChar >= 0x20) ? Key.UnicodeChar : L' ');
+  return (Key.UnicodeChar == L'y') || (Key.UnicodeChar == L'Y');
+}
+
+/**
+  Remove "--force" from the argument list. Returns TRUE when it was present.
+**/
+STATIC
+BOOLEAN
+TakeForce (
+  IN OUT UINTN   *Argc,
+  IN OUT CHAR16  **Argv
+  )
+{
+  UINTN    Index;
+  UINTN    Out;
+  BOOLEAN  Force;
+
+  Force = FALSE;
+  Out   = 0;
+  for (Index = 0; Index < *Argc; Index++) {
+    if (BdtStriCmp (Argv[Index], L"--force") == 0) {
+      Force = TRUE;
+    } else {
+      Argv[Out++] = Argv[Index];
+    }
+  }
+
+  *Argc = Out;
+  return Force;
+}
+
+STATIC
+EFI_STATUS
+ParseWidth (
+  IN  UINTN   Argc,
+  IN  CHAR16  **Argv,
+  IN  UINTN   Position,
+  IN  UINTN   Default,
+  IN  UINTN   Max,
+  OUT UINTN   *Width
+  )
+{
+  UINT64  Value;
+
+  *Width = Default;
+  if (Argc <= Position) {
+    return EFI_SUCCESS;
+  }
+
+  if (EFI_ERROR (ParseNumberArg (Argv[Position], &Value)) ||
+      ((Value != 1) && (Value != 2) && (Value != 4) && (Value != 8)) || (Value > Max))
+  {
+    BdtOutError (L"Width must be 1, 2, 4%s", (Max == 8) ? L" or 8" : L"");
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *Width = (UINTN)Value;
+  return EFI_SUCCESS;
+}
 
 EFI_STATUS
 BdtCmdIo (
@@ -728,46 +810,134 @@ BdtCmdIo (
 {
   UINT64           Address;
   UINT64           Length;
-  UINT64           Width;
+  UINT64           Value;
+  UINTN            Width;
+  BOOLEAN          Force;
+  BOOLEAN          Write;
   BDT_PCI_ADDRESS  Pci;
+  CHAR16           Target[64];
 
-  if ((Argc >= 2) && (BdtStriCmp (Argv[1], L"write") == 0)) {
-    BdtOutError (L"Write operations are disabled: BDT is a read-only toolkit");
-    return EFI_ACCESS_DENIED;
-  }
-
-  if ((Argc < 3) || (BdtStriCmp (Argv[1], L"read") != 0)) {
+  Force = TakeForce (&Argc, Argv);
+  if ((Argc < 3) || ((BdtStriCmp (Argv[1], L"read") != 0) && (BdtStriCmp (Argv[1], L"write") != 0))) {
     return EFI_INVALID_PARAMETER;
   }
 
+  Write = (BdtStriCmp (Argv[1], L"write") == 0);
+
+  //
+  // io mmio read <address> <length> [width] | io mmio write <address> <value> [width]
+  //
   if (IsSub (Argc, Argv, L"mmio") && (Argc >= 4) && (Argc <= 5)) {
-    Width = 4;
-    if (EFI_ERROR (ParseHexArg (Argv[2], &Address)) || EFI_ERROR (ParseNumberArg (Argv[3], &Length)) ||
-        ((Argc == 5) && EFI_ERROR (ParseNumberArg (Argv[4], &Width))))
+    if (EFI_ERROR (ParseHexArg (Argv[2], &Address)) || EFI_ERROR (ParseWidth (Argc, Argv, 4, 4, 8, &Width))) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    if (!Write) {
+      if (EFI_ERROR (ParseNumberArg (Argv[3], &Length))) {
+        return EFI_INVALID_PARAMETER;
+      }
+
+      BDT_RUN (Context, Label (L"io", Argc, Argv), BdtMmioRead (Address, (UINTN)Length, Width));
+    }
+
+    if (EFI_ERROR (ParseHexArg (Argv[3], &Value))) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    UnicodeSPrint (Target, sizeof (Target), L"MMIO 0x%lx (%d byte)", Address, Width);
+    if (!Force && !ConfirmWrite (Target, Value)) {
+      return EFI_ABORTED;
+    }
+
+    BDT_RUN (Context, Label (L"io", Argc, Argv), BdtMmioWrite (Address, Width, Value));
+  }
+
+  //
+  // io pci read <BDF> <offset> [width] | io pci write <BDF> <offset> <value> [width]
+  //
+  if (IsSub (Argc, Argv, L"pci") && (Argc >= 4)) {
+    if (EFI_ERROR (ParseBdf (Argv[2], &Pci)) || EFI_ERROR (ParseHexArg (Argv[3], &Address)) || (Address > 0xFFF)) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    if (!Write) {
+      if ((Argc > 5) || EFI_ERROR (ParseWidth (Argc, Argv, 4, 4, 4, &Width))) {
+        return EFI_INVALID_PARAMETER;
+      }
+
+      BDT_RUN (Context, Label (L"io", Argc, Argv), BdtPciReadRegister (&Pci, (UINT32)Address, Width));
+    }
+
+    if ((Argc < 5) || (Argc > 6) || EFI_ERROR (ParseHexArg (Argv[4], &Value)) ||
+        EFI_ERROR (ParseWidth (Argc, Argv, 5, 4, 4, &Width)) || (RShiftU64 (Value, Width * 8) != 0))
     {
       return EFI_INVALID_PARAMETER;
     }
 
-    BDT_RUN (Context, Label (L"io", Argc, Argv), BdtMmioRead (Address, (UINTN)Length, (UINTN)Width));
+    UnicodeSPrint (Target, sizeof (Target), L"PCI %s offset 0x%lx (%d byte)", Argv[2], Address, Width);
+    if (!Force && !ConfirmWrite (Target, Value)) {
+      return EFI_ABORTED;
+    }
+
+    BDT_RUN (Context, Label (L"io", Argc, Argv), BdtPciWriteRegister (&Pci, (UINT32)Address, Width, (UINT32)Value));
   }
 
-  if (IsSub (Argc, Argv, L"pci") && (Argc >= 4) && (Argc <= 5)) {
-    Width = 4;
-    if (EFI_ERROR (ParseBdf (Argv[2], &Pci)) || EFI_ERROR (ParseHexArg (Argv[3], &Address)) || (Address > 0xFFF) ||
-        ((Argc == 5) && EFI_ERROR (ParseNumberArg (Argv[4], &Width))))
+  //
+  // io port read <port> [width] | io port write <port> <value> [width]
+  //
+  if (IsSub (Argc, Argv, L"port")) {
+    if (EFI_ERROR (ParseHexArg (Argv[2], &Address)) || (Address > 0xFFFF)) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    if (!Write) {
+      if ((Argc > 4) || EFI_ERROR (ParseWidth (Argc, Argv, 3, 1, 4, &Width))) {
+        return EFI_INVALID_PARAMETER;
+      }
+
+      BDT_RUN (Context, Label (L"io", Argc, Argv), BdtIoPortShow ((UINT16)Address, Width));
+    }
+
+    if ((Argc < 4) || (Argc > 5) || EFI_ERROR (ParseHexArg (Argv[3], &Value)) ||
+        EFI_ERROR (ParseWidth (Argc, Argv, 4, 1, 4, &Width)) || (RShiftU64 (Value, Width * 8) != 0))
     {
       return EFI_INVALID_PARAMETER;
     }
 
-    BDT_RUN (Context, Label (L"io", Argc, Argv), BdtPciReadRegister (&Pci, (UINT32)Address, (UINTN)Width));
+    UnicodeSPrint (Target, sizeof (Target), L"I/O port 0x%lx (%d byte)", Address, Width);
+    if (!Force && !ConfirmWrite (Target, Value)) {
+      return EFI_ABORTED;
+    }
+
+    BDT_RUN (Context, Label (L"io", Argc, Argv), BdtIoPortWriteShow ((UINT16)Address, Width, (UINT32)Value));
   }
 
-  if (IsSub (Argc, Argv, L"msr") && (Argc == 3)) {
+  //
+  // io msr read <index> | io msr write <index> <value>
+  //
+  if (IsSub (Argc, Argv, L"msr")) {
     if (EFI_ERROR (ParseHexArg (Argv[2], &Address)) || (Address > MAX_UINT32)) {
       return EFI_INVALID_PARAMETER;
     }
 
-    BDT_RUN (Context, Label (L"io", Argc, Argv), BdtCpuMsr ((UINT32)Address));
+    if (!Write) {
+      if (Argc != 3) {
+        return EFI_INVALID_PARAMETER;
+      }
+
+      BDT_RUN (Context, Label (L"io", Argc, Argv), BdtCpuMsr ((UINT32)Address));
+    }
+
+    if ((Argc != 4) || EFI_ERROR (ParseHexArg (Argv[3], &Value))) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    UnicodeSPrint (Target, sizeof (Target), L"MSR 0x%lx", Address);
+    if (!Force && !ConfirmWrite (Target, Value)) {
+      return EFI_ABORTED;
+    }
+
+    BDT_RUN (Context, Label (L"io", Argc, Argv), BdtCpuMsrWrite ((UINT32)Address, Value));
   }
 
   return EFI_INVALID_PARAMETER;

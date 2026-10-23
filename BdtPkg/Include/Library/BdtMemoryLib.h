@@ -53,4 +53,27 @@ EFI_STATUS EFIAPI BdtMemorySafeRead (
   OUT BOOLEAN  *Protected OPTIONAL
   );
 
+/**
+  Write one unit of Width (1, 2, 4 or 8) bytes with MMIO accessors.
+  Page faults and #GP are caught and returned as EFI_DEVICE_ERROR.
+**/
+EFI_STATUS EFIAPI BdtMemorySafeWrite (IN UINT64 Address, IN UINTN Width, IN UINT64 Value);
+
+/**
+  Write MMIO / memory and show old, written and read back values.
+**/
+EFI_STATUS EFIAPI BdtMmioWrite (IN UINT64 Address, IN UINTN Width, IN UINT64 Value);
+
+/**
+  Access an I/O port with Width 1, 2 or 4.
+**/
+UINT32 EFIAPI BdtIoPortRead (IN UINT16 Port, IN UINTN Width);
+VOID   EFIAPI BdtIoPortWrite (IN UINT16 Port, IN UINTN Width, IN UINT32 Value);
+
+/**
+  Read / write an I/O port and show the values.
+**/
+EFI_STATUS EFIAPI BdtIoPortShow (IN UINT16 Port, IN UINTN Width);
+EFI_STATUS EFIAPI BdtIoPortWriteShow (IN UINT16 Port, IN UINTN Width, IN UINT32 Value);
+
 #endif

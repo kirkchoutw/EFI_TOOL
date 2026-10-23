@@ -1468,3 +1468,85 @@ BdtPciDescribeRegister (
       );
   }
 }
+
+EFI_STATUS
+EFIAPI
+BdtPciConfigWrite (
+  IN BDT_PCI_INFO  *Info,
+  IN UINT32        Offset,
+  IN UINTN         Width,
+  IN UINT32        Value
+  )
+{
+  EFI_PCI_IO_PROTOCOL_WIDTH  IoWidth;
+
+  switch (Width) {
+    case 1:
+      IoWidth = EfiPciIoWidthUint8;
+      break;
+    case 2:
+      IoWidth = EfiPciIoWidthUint16;
+      break;
+    case 4:
+      IoWidth = EfiPciIoWidthUint32;
+      break;
+    default:
+      return EFI_INVALID_PARAMETER;
+  }
+
+  if (((Offset & (Width - 1)) != 0) || (Offset + Width > PCIE_CFG_SIZE)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  return Info->PciIo->Pci.Write (Info->PciIo, IoWidth, Offset, 1, &Value);
+}
+
+EFI_STATUS
+EFIAPI
+BdtPciWriteRegister (
+  IN CONST BDT_PCI_ADDRESS  *Address,
+  IN UINT32                 Offset,
+  IN UINTN                  Width,
+  IN UINT32                 Value
+  )
+{
+  EFI_STATUS    Status;
+  BDT_PCI_INFO  *Devices;
+  BDT_PCI_INFO  *Device;
+  UINT32        Old;
+  UINT32        New;
+  CHAR16        Bdf[20];
+  CHAR16        Name[64];
+
+  if (((Width != 1) && (Width != 2) && (Width != 4)) || ((Offset & (Width - 1)) != 0) || (Offset + Width > PCIE_CFG_SIZE)) {
+    BdtOutError (L"Offset must be aligned to the width (1, 2 or 4) and below 0x1000");
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = FindDevice (Address, &Devices, &Device);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Old = 0;
+  New = 0;
+  BdtPciConfigRead (Device, Offset, Width, 1, &Old);
+  Status = BdtPciConfigWrite (Device, Offset, Width, Value);
+  if (EFI_ERROR (Status)) {
+    BdtOutError (L"Config write failed (%s)", BdtStatusName (Status));
+  } else {
+    BdtPciConfigRead (Device, Offset, Width, 1, &New);
+    FormatBdf (&Device->Address, Bdf, sizeof (Bdf));
+    BdtPciDescribeRegister (Device, Offset, Name, sizeof (Name));
+    BdtOutField (L"BDF", L"%s", Bdf);
+    BdtOutFieldHex (L"Offset", Offset, 3);
+    BdtOutField (L"Register", L"%s", Name);
+    BdtOutFieldNum (L"Width", Width);
+    BdtOutFieldHex (L"Old Value", Old, Width * 2);
+    BdtOutFieldHex (L"Written", Value, Width * 2);
+    BdtOutFieldHex (L"Read Back", New, Width * 2);
+  }
+
+  FreePool (Devices);
+  return Status;
+}

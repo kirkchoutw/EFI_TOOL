@@ -77,6 +77,16 @@ UINTN EFIAPI BdtPciConfigSize (IN BDT_PCI_INFO *Info);
 EFI_STATUS EFIAPI BdtPciConfigRead (IN BDT_PCI_INFO *Info, IN UINT32 Offset, IN UINTN Width, IN UINTN Count, OUT VOID *Buffer);
 
 /**
+  Write one register of Width (1, 2 or 4) bytes at Offset.
+**/
+EFI_STATUS EFIAPI BdtPciConfigWrite (IN BDT_PCI_INFO *Info, IN UINT32 Offset, IN UINTN Width, IN UINT32 Value);
+
+/**
+  Write one configuration register of a device and show old / new values.
+**/
+EFI_STATUS EFIAPI BdtPciWriteRegister (IN CONST BDT_PCI_ADDRESS *Address, IN UINT32 Offset, IN UINTN Width, IN UINT32 Value);
+
+/**
   Describe the register at Offset: header field name or capability name.
 **/
 VOID EFIAPI BdtPciDescribeRegister (IN BDT_PCI_INFO *Info, IN UINT32 Offset, OUT CHAR16 *Buffer, IN UINTN BufferSize);

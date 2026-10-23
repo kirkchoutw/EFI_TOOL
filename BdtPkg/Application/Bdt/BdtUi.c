@@ -11,6 +11,9 @@
   Only EFI_SIMPLE_TEXT_OUTPUT / INPUT are used, so the UI works on a local
   screen and on a serial console alike.
 
+  Write mode (F2) must be enabled explicitly; the title bar turns red while
+  it is on. Writes go straight to the hardware and are read back.
+
   Copyright (c) 2026, Kirk Chou. All rights reserved.<BR>
   SPDX-License-Identifier: MIT
 **/
@@ -19,6 +22,7 @@
 #include <Library/IoLib.h>
 
 #define ATTR_TITLE     EFI_TEXT_ATTR (EFI_WHITE,     EFI_BLUE)
+#define ATTR_TITLE_WR  EFI_TEXT_ATTR (EFI_WHITE,     EFI_RED)
 #define ATTR_TAB       EFI_TEXT_ATTR (EFI_BLACK,     EFI_LIGHTGRAY)
 #define ATTR_TAB_SEL   EFI_TEXT_ATTR (EFI_WHITE,     EFI_RED)
 #define ATTR_NORMAL    EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK)
@@ -36,13 +40,16 @@
 
 #define CHAR_ESC       0x1B
 
-STATIC UINTN  mCols;
-STATIC UINTN  mRows;
-STATIC UINTN  mPage;
-STATIC CHAR16 mLine[BDT_UI_MAX_COLS + 1];
+STATIC UINTN    mCols;
+STATIC UINTN    mRows;
+STATIC UINTN    mPage;
+STATIC CHAR16   mLine[BDT_UI_MAX_COLS + 1];
+STATIC BOOLEAN  mWriteEnabled = FALSE;
+STATIC CHAR16   mMessage[BDT_UI_MAX_COLS];      ///< One-shot status line message.
 
-STATIC CONST CHAR16  *mListKeys = L" Enter:Open  \x2191\x2193:Select  \x2190\x2192/1-7:Page  G:Goto  R:Refresh  Esc:Quit";
-STATIC CONST CHAR16  *mHexKeys  = L" Arrows:Move  PgUp/PgDn  W:Width  G:Goto  Tab/-:Next/Prev  R:Refresh  Esc:Back";
+STATIC CONST CHAR16  *mListKeys   = L" Enter:Open  \x2191\x2193:Select  \x2190\x2192/1-7:Page  G:Goto  R:Refresh  F2:Write  Esc:Quit";
+STATIC CONST CHAR16  *mHexKeys    = L" Arrows:Move  PgUp/PgDn  W:Width  G:Goto  Tab/-:Next/Prev  R:Refresh  F2:Write  Esc:Back";
+STATIC CONST CHAR16  *mHexKeysWr  = L" 0-9A-F/Enter:Write  Arrows:Move  W:Width  G:Goto  Tab:Next  F2:Read only  Esc:Back";
 
 //
 // ---------------------------------------------------------------------------
@@ -105,8 +112,16 @@ DrawFrame (
   UINTN   Index;
   UINTN   Col;
 
-  UnicodeSPrint (Text, sizeof (Text), L" %s %s  |  %s", BDT_TOOL_NAME, BDT_VERSION_STRING, Title);
-  DrawRow (0, ATTR_TITLE, Text);
+  UnicodeSPrint (
+    Text,
+    sizeof (Text),
+    L" %s %s  |  %s%s",
+    BDT_TOOL_NAME,
+    BDT_VERSION_STRING,
+    Title,
+    mWriteEnabled ? L"      *** WRITE ENABLED ***" : L""
+    );
+  DrawRow (0, mWriteEnabled ? ATTR_TITLE_WR : ATTR_TITLE, Text);
 
   DrawRow (1, ATTR_TAB, L"");
   Col = 1;
@@ -128,7 +143,13 @@ DrawStatus (
   IN CONST CHAR16  *Keys
   )
 {
-  DrawRow (mRows - 2, ATTR_STATUS, Status);
+  if (mMessage[0] != L'\0') {
+    DrawRow (mRows - 2, ATTR_TITLE_WR, mMessage);
+    mMessage[0] = L'\0';
+  } else {
+    DrawRow (mRows - 2, ATTR_STATUS, Status);
+  }
+
   DrawRow (mRows - 1, ATTR_KEYS, Keys);
 }
 
@@ -156,8 +177,19 @@ ReadKey (
 **/
 STATIC
 BOOLEAN
-PromptHex (
+IsHexChar (
+  IN CHAR16  Char
+  )
+{
+  return ((Char >= L'0') && (Char <= L'9')) || ((Char >= L'a') && (Char <= L'f')) || ((Char >= L'A') && (Char <= L'F'));
+}
+
+STATIC
+BOOLEAN
+PromptHexEx (
   IN  CONST CHAR16  *Label,
+  IN  CHAR16        First,
+  IN  UINTN         MaxDigits,
   OUT UINT64        *Value
   )
 {
@@ -166,8 +198,14 @@ PromptHex (
   UINTN          Length;
   CHAR16         Text[BDT_UI_MAX_COLS];
 
-  Length   = 0;
-  Input[0] = L'\0';
+  MaxDigits = MIN (MaxDigits, 16);
+  Length    = 0;
+  Input[0]  = L'\0';
+  if (IsHexChar (First)) {
+    Input[Length++] = First;
+    Input[Length]   = L'\0';
+  }
+
   DrawRow (mRows - 1, ATTR_KEYS, L" Enter hex value, Enter:OK  Backspace:Delete  Esc:Cancel");
   while (TRUE) {
     UnicodeSPrint (Text, sizeof (Text), L" %s 0x%s_", Label, Input);
@@ -183,15 +221,63 @@ PromptHex (
 
     if ((Key.UnicodeChar == CHAR_BACKSPACE) && (Length > 0)) {
       Input[--Length] = L'\0';
-    } else if ((Length < 16) &&
-               (((Key.UnicodeChar >= L'0') && (Key.UnicodeChar <= L'9')) ||
-                ((Key.UnicodeChar >= L'a') && (Key.UnicodeChar <= L'f')) ||
-                ((Key.UnicodeChar >= L'A') && (Key.UnicodeChar <= L'F'))))
-    {
+    } else if ((Length < MaxDigits) && IsHexChar (Key.UnicodeChar)) {
       Input[Length++] = Key.UnicodeChar;
       Input[Length]   = L'\0';
     }
   }
+}
+
+STATIC
+BOOLEAN
+PromptHex (
+  IN  CONST CHAR16  *Label,
+  OUT UINT64        *Value
+  )
+{
+  return PromptHexEx (Label, 0, 16, Value);
+}
+
+/**
+  Ask a yes / no question on the status line. Default is no.
+**/
+STATIC
+BOOLEAN
+ConfirmYesNo (
+  IN CONST CHAR16  *Question
+  )
+{
+  EFI_INPUT_KEY  Key;
+
+  DrawRow (mRows - 2, ATTR_TITLE_WR, Question);
+  DrawRow (mRows - 1, ATTR_KEYS, L" Y:Yes  any other key:No");
+  ReadKey (&Key);
+  return (Key.UnicodeChar == L'y') || (Key.UnicodeChar == L'Y');
+}
+
+/**
+  F2: toggle write mode. Enabling needs an explicit confirmation.
+**/
+STATIC
+VOID
+ToggleWriteMode (
+  VOID
+  )
+{
+  if (mWriteEnabled) {
+    mWriteEnabled = FALSE;
+    StrCpyS (mMessage, ARRAY_SIZE (mMessage), L" Write mode off: read only");
+    return;
+  }
+
+  mWriteEnabled = ConfirmYesNo (
+                    L" Enable WRITE mode? Values go straight to hardware and can hang or damage the system. (y/N)"
+                    );
+  StrCpyS (
+    mMessage,
+    ARRAY_SIZE (mMessage),
+    mWriteEnabled ? L" Write mode ON: type hex digits or Enter on a value to write it" : L" Write mode not enabled"
+    );
 }
 
 /**
@@ -477,7 +563,7 @@ HexDraw (
     UnicodeSPrint (Text, sizeof (Text), L" Addr 0x%lx  Value: not readable  %s", Hex->DisplayBase + Hex->Cursor, Describe);
   }
 
-  DrawStatus (Text, mHexKeys);
+  DrawStatus (Text, (mWriteEnabled && !Hex->ReadOnly) ? mHexKeysWr : mHexKeys);
 }
 
 /**
@@ -501,6 +587,86 @@ HexClamp (
   }
 
   Hex->Top &= ~(UINT64)0xF;
+}
+
+/**
+  Write one unit of the current width at Offset.
+**/
+STATIC
+EFI_STATUS
+HexWrite (
+  IN BDT_UI_HEX  *Hex,
+  IN UINT64      Offset,
+  IN UINT64      Value
+  )
+{
+  EFI_STATUS  Status;
+  UINT64      Address;
+  UINTN       Byte;
+
+  switch (Hex->Kind) {
+    case BdtUiSourceMemory:
+      Address = Hex->Base + Offset;
+      if ((Address & (Hex->Width - 1)) == 0) {
+        return BdtMemorySafeWrite (Address, Hex->Width, Value);
+      }
+
+      //
+      // Unaligned window (table in RAM): write byte by byte, little endian.
+      //
+      for (Byte = 0; Byte < Hex->Width; Byte++) {
+        Status = BdtMemorySafeWrite (Address + Byte, 1, RShiftU64 (Value, Byte * 8) & 0xFF);
+        if (EFI_ERROR (Status)) {
+          return Status;
+        }
+      }
+
+      return EFI_SUCCESS;
+
+    case BdtUiSourceIo:
+      BdtIoPortWrite ((UINT16)(Hex->Base + Offset), Hex->Width, (UINT32)Value);
+      return EFI_SUCCESS;
+
+    case BdtUiSourcePci:
+      return BdtPciConfigWrite (Hex->Pci, (UINT32)Offset, Hex->Width, (UINT32)Value);
+  }
+
+  return EFI_UNSUPPORTED;
+}
+
+/**
+  Edit the unit under the cursor. First is the first typed digit (or 0).
+**/
+STATIC
+VOID
+HexEdit (
+  IN OUT BDT_UI_HEX  *Hex,
+  IN     CHAR16      First
+  )
+{
+  EFI_STATUS  Status;
+  UINT64      Value;
+  CHAR16      Label[64];
+
+  if (Hex->Cursor + Hex->Width - 1 > Hex->Last) {
+    StrCpyS (mMessage, ARRAY_SIZE (mMessage), L" Value crosses the end of the data");
+    return;
+  }
+
+  UnicodeSPrint (Label, sizeof (Label), L"Write %d byte(s) @ 0x%lx:", Hex->Width, Hex->DisplayBase + Hex->Cursor);
+  if (!PromptHexEx (Label, First, Hex->Width * 2, &Value)) {
+    StrCpyS (mMessage, ARRAY_SIZE (mMessage), L" Cancelled, nothing written");
+    return;
+  }
+
+  Status = HexWrite (Hex, Hex->Cursor, Value);
+  if (EFI_ERROR (Status)) {
+    UnicodeSPrint (mMessage, sizeof (mMessage), L" Write 0x%lx @ 0x%lx failed: %s", Value, Hex->DisplayBase + Hex->Cursor, BdtStatusName (Status));
+  } else {
+    UnicodeSPrint (mMessage, sizeof (mMessage), L" Wrote 0x%0*lx @ 0x%lx (value shown is read back)", Hex->Width * 2, Value, Hex->DisplayBase + Hex->Cursor);
+  }
+
+  Hex->Loaded = FALSE;
 }
 
 /**
@@ -531,6 +697,31 @@ HexView (
     DrawFrame (Page->Name);
     HexDraw (Hex);
     ReadKey (&Key);
+
+    if (Key.ScanCode == SCAN_F2) {
+      ToggleWriteMode ();
+      continue;
+    }
+
+    //
+    // In write mode hex digits and Enter edit the value (digits no longer
+    // switch pages).
+    //
+    if (IsHexChar (Key.UnicodeChar) || (Key.UnicodeChar == CHAR_CARRIAGE_RETURN)) {
+      if (mWriteEnabled && !Hex->ReadOnly) {
+        HexEdit (Hex, Key.UnicodeChar);
+        continue;
+      }
+
+      if (Key.UnicodeChar == CHAR_CARRIAGE_RETURN) {
+        StrCpyS (
+          mMessage,
+          ARRAY_SIZE (mMessage),
+          Hex->ReadOnly ? L" This view is read only" : L" Read only: press F2 to enable write mode"
+          );
+        continue;
+      }
+    }
 
     Global = GlobalKey (&Key);
     if (Global != -3) {
@@ -795,12 +986,27 @@ PageView (
       LoadPage (Page);
     }
 
+    if (Key.ScanCode == SCAN_F2) {
+      ToggleWriteMode ();
+    }
+
     if ((Key.UnicodeChar == CHAR_CARRIAGE_RETURN) && (Page->Count > 0)) {
       ZeroMem (Hex, sizeof (BDT_UI_HEX));
       if (Page->Open (Page->Selected, Hex)) {
         Result = HexView (Page, &Page->Selected, Hex);
         if (Result != UI_BACK) {
           break;
+        }
+      } else if (Page->Edit != NULL) {
+        if (!mWriteEnabled) {
+          StrCpyS (mMessage, ARRAY_SIZE (mMessage), L" Read only: press F2 to enable write mode");
+        } else if (PromptHexEx (L"New value:", 0, Page->EditDigits, &Value)) {
+          Page->Edit (Page->Selected, Value, mMessage, sizeof (mMessage));
+          Select = Page->Selected;
+          LoadPage (Page);
+          Page->Selected = Select;
+        } else {
+          StrCpyS (mMessage, ARRAY_SIZE (mMessage), L" Cancelled, nothing written");
         }
       }
     }
@@ -862,7 +1068,9 @@ BdtCmdUi (
   gST->ConOut->SetAttribute (gST->ConOut, ATTR_NORMAL);
   gST->ConOut->ClearScreen (gST->ConOut);
 
-  mPage = 0;
+  mPage         = 0;
+  mWriteEnabled = FALSE;
+  mMessage[0]   = L'\0';
   while (TRUE) {
     Next = PageView (gBdtUiPages[mPage]);
     if ((Next < 0) || ((UINTN)Next >= gBdtUiPageCount)) {

@@ -637,6 +637,30 @@ MsrGoto (
   return FALSE;
 }
 
+STATIC
+EFI_STATUS
+MsrEdit (
+  IN  UINTN   Index,
+  IN  UINT64  Value,
+  OUT CHAR16  *Message,
+  IN  UINTN   MessageSize
+  )
+{
+  EFI_STATUS  Status;
+  UINT64      ReadBack;
+
+  Status = BdtCpuWriteMsr (mMsrs[Index].Index, Value);
+  if (EFI_ERROR (Status)) {
+    UnicodeSPrint (Message, MessageSize, L" WRMSR 0x%x = 0x%lx failed (#GP caught)", mMsrs[Index].Index, Value);
+  } else if (!EFI_ERROR (BdtCpuReadMsr (mMsrs[Index].Index, &ReadBack))) {
+    UnicodeSPrint (Message, MessageSize, L" Wrote MSR 0x%x = 0x%lx, read back 0x%lx", mMsrs[Index].Index, Value, ReadBack);
+  } else {
+    UnicodeSPrint (Message, MessageSize, L" Wrote MSR 0x%x = 0x%lx", mMsrs[Index].Index, Value);
+  }
+
+  return Status;
+}
+
 STATIC BDT_UI_PAGE  mMsrPage = {
   L"MSR",
   L" Index     Name                          Value",
@@ -647,7 +671,9 @@ STATIC BDT_UI_PAGE  mMsrPage = {
   MsrInfo,
   MsrGoto,
   L"MSR index:",
-  NULL
+  NULL,
+  MsrEdit,
+  16
 };
 
 //
@@ -1127,8 +1153,10 @@ VarOpen (
   }
 
   //
-  // The data is a private copy; show offsets from 0.
+  // The data is a private copy (writing it would change nothing); show
+  // offsets from 0.
   //
+  Hex->ReadOnly = TRUE;
   Hex->Kind     = BdtUiSourceMemory;
   Hex->Base     = (UINTN)mVarData;
   Hex->Last     = Size - 1;

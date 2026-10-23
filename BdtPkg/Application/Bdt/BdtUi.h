@@ -3,7 +3,7 @@
 
   The UI is a set of pages (tabs). A page shows a list of items; opening an
   item shows a hex view of its data source (PCI config space, memory, I/O
-  ports, ...). Everything is read only.
+  ports, ...). The UI starts read only; F2 enables write mode.
 
   Copyright (c) 2026, Kirk Chou. All rights reserved.<BR>
   SPDX-License-Identifier: MIT
@@ -50,6 +50,7 @@ struct _BDT_UI_HEX {
   CHAR16                Title[128];
   BDT_UI_DESCRIBE       Describe;      ///< Optional.
   UINT64                Cursor;        ///< Initial cursor offset.
+  BOOLEAN               ReadOnly;      ///< Never writable (e.g. a private copy).
 
   //
   // View state, owned by the hex view.
@@ -102,6 +103,13 @@ struct _BDT_UI_PAGE {
     Release page resources when the UI exits.
   **/
   VOID            (*Unload)(VOID);
+
+  /**
+    Optional write of item Index (list pages without hex view, e.g. MSR).
+    Message receives the result shown on the status line.
+  **/
+  EFI_STATUS      (*Edit)(IN UINTN Index, IN UINT64 Value, OUT CHAR16 *Message, IN UINTN MessageSize);
+  UINTN           EditDigits;
 
   //
   // List state, owned by the UI.

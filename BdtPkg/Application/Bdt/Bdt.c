@@ -87,8 +87,12 @@ CONST BDT_COMMAND  gBdtCommands[] = {
     BdtCmdSecurity
   },
   {
-    L"io",         L"Raw register reads (read only)",
-    L"io mmio read <address> <length> [width] | pci read <BDF> <offset> [width] | msr read <address>",
+    L"io",         L"Raw register read / write",
+    L"io mmio read <address> <length> [width] | io mmio write <address> <value> [width]\r\n"
+    L"         io pci read <BDF> <offset> [width]    | io pci write <BDF> <offset> <value> [width]\r\n"
+    L"         io port read <port> [width]           | io port write <port> <value> [width]\r\n"
+    L"         io msr read <index>                   | io msr write <index> <value>\r\n"
+    L"         Writes ask for confirmation; add --force to skip it (scripts).",
     BdtCmdIo
   },
   {
@@ -97,7 +101,7 @@ CONST BDT_COMMAND  gBdtCommands[] = {
     BdtCmdCollect
   },
   {
-    L"ui",         L"Full screen browser (PCI, memory, I/O, MSR, ACPI, SMBIOS, variables)",
+    L"ui",         L"Full screen browser / editor (PCI, memory, I/O, MSR, ACPI, SMBIOS, variables)",
     L"ui",
     BdtCmdUi
   },
@@ -313,6 +317,8 @@ ShellAppMain (
   Status = Command->Handler (&Context, ArgCount - 1, &Args[1]);
   if (Status == EFI_INVALID_PARAMETER) {
     PrintUsage (Command);
+  } else if (Status == EFI_ABORTED) {
+    BdtOutError (L"Cancelled, nothing written");
   } else if (EFI_ERROR (Status)) {
     BdtOutError (L"%s failed: %s", Command->Name, BdtStatusName (Status));
   }

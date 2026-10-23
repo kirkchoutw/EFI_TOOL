@@ -3,7 +3,7 @@ A collection of UEFI applications and utilities for firmware development, debugg
 
 ## BIOS EFI Debug Toolkit (BdtPkg)
 
-`BDT.efi` is a read-only UEFI Shell application for inspecting a platform:
+`BDT.efi` is a UEFI Shell application for inspecting a platform:
 system summary, boot options, PCI/PCIe, memory map, UEFI variables,
 handles/protocols/device paths, ACPI, SMBIOS, CPU (CPUID/MSR/MTRR/MCA),
 firmware volumes, Secure Boot and TPM 2.0. Every command can print text,
@@ -45,7 +45,10 @@ BDT.efi smbios list | dump | type <type> | validate
 BDT.efi cpu info | cpuid [leaf [subleaf]] | msr <address> | mtrr | mca
 BDT.efi firmware fv | ffs [fv index] | find <guid>
 BDT.efi security secureboot | pk | kek | db | dbx | dbt | dbr | tpm | pcr [index] | tcglog
-BDT.efi io mmio read <address> <length> [width] | pci read <BDF> <offset> [width] | msr read <address>
+BDT.efi io mmio read <address> <length> [width]   | io mmio write <address> <value> [width] [--force]
+BDT.efi io pci read <BDF> <offset> [width]        | io pci write <BDF> <offset> <value> [width] [--force]
+BDT.efi io port read <port> [width]               | io port write <port> <value> [width] [--force]
+BDT.efi io msr read <index>                       | io msr write <index> <value> [--force]
 BDT.efi collect [--quick | --full] [--output <directory>]
 BDT.efi ui
 ```
@@ -66,7 +69,13 @@ BDT.efi ui
 
 Keys: `1`-`7` / `←` `→` switch page, `Enter` open, `Esc` back / quit, `G` go to address,
 `W` access width (byte / word / dword / qword), `Tab` / `-` next / previous item, `R` refresh.
-The UI is read only.
+
+Write mode: `F2` toggles it (enabling asks for confirmation; the title bar turns red).
+In a hex view of PCI, Memory, I/O, ACPI or SMBIOS, type hex digits or press `Enter`
+to write the value under the cursor with the current width; the view shows the
+value read back. On the MSR page, `Enter` writes the selected MSR. Variable data
+is a private copy and stays read only. In write mode hex digits edit, so use
+`Esc` then `1`-`7` to change page.
 
 Global options: `--format text|csv|json` (`-f`), `--output <file>` (`-o`).
 BDF is hex `[seg:]bus:dev.func`; GUIDs are accepted as text or known names
@@ -90,10 +99,13 @@ BdtPkg/
 
 ### Notes
 
-- Read only: no command writes hardware registers, MSRs or variables.
-  `io ... write` is rejected.
-- MSR reads install a temporary #GP handler, so an unsupported MSR returns
-  an error instead of hanging (when the CPU arch protocol allows it).
+- Read only by default. Hardware writes happen only through `io ... write`
+  (asks `[y/N]` unless `--force`) or the UI write mode (`F2`). Writes go
+  straight to the hardware: a wrong value can hang or damage the system.
+  Firmware flash and UEFI variables are never written.
+- MSR reads / writes install a temporary #GP handler, and memory reads /
+  writes a #PF / #GP handler, so an unsupported MSR or unmapped address
+  returns an error instead of hanging (when the CPU arch protocol allows it).
 - `boot timing` needs the platform to publish the ACPI FPDT
   (FirmwarePerformanceDxe + a PerformanceLib).
 - Not implemented yet: `boot trace` (needs the planned BdtDxe driver),

@@ -1,9 +1,9 @@
 /** @file
   BdtCpuLib - CPUID / MSR / MTRR / MCA inspection (IA32 / X64).
 
-  MSR reads are protected: a temporary #GP handler is registered through
-  EFI_CPU_ARCH_PROTOCOL so reading an unsupported MSR returns an error instead
-  of hanging the platform. Nothing is ever written to an MSR.
+  MSR accesses are protected: a temporary #GP handler is registered through
+  EFI_CPU_ARCH_PROTOCOL so accessing an unsupported MSR returns an error
+  instead of hanging the platform. MSRs are only written by BdtCpuWriteMsr.
 
   Copyright (c) 2026, Kirk Chou. All rights reserved.<BR>
   SPDX-License-Identifier: MIT
@@ -76,9 +76,10 @@ GpFaultHandler (
  #endif
 
   //
-  // Only recover from a faulting RDMSR (0F 32): skip it and return zero.
+  // Only recover from a faulting RDMSR (0F 32) or WRMSR (0F 30): skip the
+  // instruction (a read returns zero).
   //
-  if ((Ip[0] == 0x0F) && (Ip[1] == 0x32)) {
+  if ((Ip[0] == 0x0F) && ((Ip[1] == 0x32) || (Ip[1] == 0x30))) {
     mMsrFault = TRUE;
  #if defined (MDE_CPU_X64)
     SystemContext.SystemContextX64->Rip += 2;
@@ -641,5 +642,68 @@ BdtCpuMca (
 
   BdtOutTableEnd ();
   BdtOutFieldNum (L"Banks With Valid Error", Valid);
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+EFIAPI
+BdtCpuWriteMsr (
+  IN UINT32  Index,
+  IN UINT64  Value
+  )
+{
+  EFI_CPU_ARCH_PROTOCOL  *Cpu;
+  BOOLEAN                Protected;
+  UINT32                 Edx;
+
+  AsmCpuid (1, NULL, NULL, NULL, &Edx);
+  if ((Edx & BIT5) == 0) {
+    return EFI_UNSUPPORTED;
+  }
+
+  Protected = FALSE;
+  if (!EFI_ERROR (gBS->LocateProtocol (&gEfiCpuArchProtocolGuid, NULL, (VOID **)&Cpu))) {
+    Protected = !EFI_ERROR (Cpu->RegisterInterruptHandler (Cpu, EXCEPT_IA32_GP_FAULT, GpFaultHandler));
+  }
+
+  mMsrFault = FALSE;
+  AsmWriteMsr64 (Index, Value);
+
+  if (Protected) {
+    Cpu->RegisterInterruptHandler (Cpu, EXCEPT_IA32_GP_FAULT, NULL);
+  }
+
+  return mMsrFault ? EFI_DEVICE_ERROR : EFI_SUCCESS;
+}
+
+EFI_STATUS
+EFIAPI
+BdtCpuMsrWrite (
+  IN UINT32  Index,
+  IN UINT64  Value
+  )
+{
+  EFI_STATUS  Status;
+  UINT64      Old;
+  UINT64      New;
+  BOOLEAN     HaveOld;
+
+  HaveOld = !EFI_ERROR (BdtCpuReadMsr (Index, &Old));
+  Status  = BdtCpuWriteMsr (Index, Value);
+  if (EFI_ERROR (Status)) {
+    BdtOutError (L"WRMSR 0x%x = 0x%lx failed (#GP: reserved bits or unsupported MSR)", Index, Value);
+    return Status;
+  }
+
+  BdtOutFieldHex (L"MSR", Index, 0);
+  if (HaveOld) {
+    BdtOutFieldHex (L"Old Value", Old, 16);
+  }
+
+  BdtOutFieldHex (L"Written", Value, 16);
+  if (!EFI_ERROR (BdtCpuReadMsr (Index, &New))) {
+    BdtOutFieldHex (L"Read Back", New, 16);
+  }
+
   return EFI_SUCCESS;
 }

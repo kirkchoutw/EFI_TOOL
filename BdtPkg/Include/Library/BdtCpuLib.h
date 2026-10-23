@@ -37,6 +37,17 @@ EFI_STATUS EFIAPI BdtCpuCpuid (IN BOOLEAN All, IN UINT32 Leaf, IN UINT32 SubLeaf
 **/
 EFI_STATUS EFIAPI BdtCpuReadMsr (IN UINT32 Index, OUT UINT64 *Value);
 EFI_STATUS EFIAPI BdtCpuMsr (IN UINT32 Index);
+
+/**
+  Write an MSR. A #GP (unsupported MSR or reserved bits) is caught and
+  reported as EFI_DEVICE_ERROR when the CPU protocol allows it.
+**/
+EFI_STATUS EFIAPI BdtCpuWriteMsr (IN UINT32 Index, IN UINT64 Value);
+
+/**
+  Write an MSR and show the old, written and read back values.
+**/
+EFI_STATUS EFIAPI BdtCpuMsrWrite (IN UINT32 Index, IN UINT64 Value);
 EFI_STATUS EFIAPI BdtCpuMtrr (VOID);
 EFI_STATUS EFIAPI BdtCpuMca (VOID);
 
