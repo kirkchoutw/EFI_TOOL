@@ -42,6 +42,7 @@ BDT.efi protocol list | find <guid>
 BDT.efi devicepath list | decode <handle index>
 BDT.efi acpi list | dump <signature> [instance] | find <string> | validate | save <dir>
 BDT.efi acpi diff <old dir> [new dir] [signature]
+BDT.efi acpi aml | devices [signature [instance] | table file]
 BDT.efi smbios list | dump | type <type> | validate
 BDT.efi cpu info | cpuid [leaf [subleaf]] | msr <address> | mtrr | mca
 BDT.efi firmware fv | ffs [fv index] | find <guid> | hash [fv index]
@@ -120,5 +121,17 @@ BdtPkg/
   also sets a non-zero `%lasterror%` (EFI_SECURITY_VIOLATION) for scripts.
   `collect --full` saves one as `system/firmware_manifest.txt`.
   Manifest lines: `<FV|FFS> <fv> <guid> <type> <size> <sha256> <name>`.
+- `acpi aml` parses the AML of the DSDT / SSDTs (DSDT first) and lists
+  every named object with its full path: Device, Method (argument count,
+  serialization), Name (constant values; `_HID` / `_CID` EISA IDs decoded),
+  OperationRegion, Field units (region, byte.bit offset, width), Processor,
+  PowerResource, ThermalZone, Mutex, Event, Alias, External and buffer
+  fields. Objects created inside a load time `If` / `Else` are marked
+  `[conditional]`. `acpi devices` shows one line per device with `_HID`,
+  `_CID`, `_ADR`, `_UID` and `_STA`. Both take a signature (`DSDT`,
+  `SSDT 2`) or a saved table file (`acpi save`, `acpidump -b`, iasl output).
+  Nothing is evaluated: method results and computed values are not shown.
+  AML that cannot be followed is reported under `errors` with its offset;
+  parsing continues after the enclosing block.
 - Not implemented yet: `boot trace` (needs the planned BdtDxe driver),
   GPIO, debug log, BdtDxe/BdtPei.

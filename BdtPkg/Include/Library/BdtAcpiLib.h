@@ -50,4 +50,16 @@ EFI_STATUS EFIAPI BdtAcpiSaveTables (IN CONST CHAR16 *Directory);
 **/
 EFI_STATUS EFIAPI BdtAcpiDiff (IN CONST CHAR16 *OldDir, IN CONST CHAR16 *NewDir OPTIONAL, IN CONST CHAR16 *Signature OPTIONAL);
 
+/**
+  Parse the AML of DSDT / SSDT tables and list the named objects (Devices
+  when Devices is TRUE: _HID / _CID / _ADR / _UID / _STA per device).
+
+  @param[in] Source    NULL: all live DSDT / SSDTs. A 4 character signature:
+                       that live table (Instance, 0 based). Otherwise the
+                       path of a saved table file.
+  @param[in] Instance  Instance for a signature.
+  @param[in] Devices   Device summary instead of the object list.
+**/
+EFI_STATUS EFIAPI BdtAcpiAml (IN CONST CHAR16 *Source OPTIONAL, IN UINTN Instance, IN BOOLEAN Devices);
+
 #endif

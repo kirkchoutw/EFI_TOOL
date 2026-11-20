@@ -19,6 +19,7 @@
 
 [Sources]
   BdtAcpiLib.c
+  BdtAml.c
 
 [Packages]
   MdePkg/MdePkg.dec

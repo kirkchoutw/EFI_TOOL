@@ -53,6 +53,8 @@ STATIC EFI_STATUS CollectPciTree (IN CONST CHAR16 *Root) { return BdtPciTree ();
 STATIC EFI_STATUS CollectPciAer (IN CONST CHAR16 *Root) { return BdtPciAer (NULL); }
 STATIC EFI_STATUS CollectAcpiList (IN CONST CHAR16 *Root) { return BdtAcpiList (); }
 STATIC EFI_STATUS CollectAcpiValidate (IN CONST CHAR16 *Root) { return BdtAcpiValidate (); }
+STATIC EFI_STATUS CollectAcpiDevices (IN CONST CHAR16 *Root) { return BdtAcpiAml (NULL, 0, TRUE); }
+STATIC EFI_STATUS CollectAcpiNamespace (IN CONST CHAR16 *Root) { return BdtAcpiAml (NULL, 0, FALSE); }
 STATIC EFI_STATUS CollectVarList (IN CONST CHAR16 *Root) { return BdtVarList (); }
 STATIC EFI_STATUS CollectVarUsage (IN CONST CHAR16 *Root) { return BdtVarUsage (); }
 STATIC EFI_STATUS CollectHandles (IN CONST CHAR16 *Root) { return BdtHandleList (); }
@@ -119,6 +121,8 @@ STATIC CONST BDT_COLLECT_ITEM  mItems[] = {
   { COLLECT_NORMAL, L"pci\\aer",                 L"pci aer",             CollectPciAer         },
   { COLLECT_QUICK,  L"acpi\\tables",             L"acpi list",           CollectAcpiList       },
   { COLLECT_NORMAL, L"acpi\\validate",           L"acpi validate",       CollectAcpiValidate   },
+  { COLLECT_NORMAL, L"acpi\\devices",            L"acpi devices",        CollectAcpiDevices    },
+  { COLLECT_FULL,   L"acpi\\namespace",          L"acpi aml",            CollectAcpiNamespace  },
   { COLLECT_NORMAL, L"acpi\\binaries",           L"acpi save",           CollectAcpiBinaries   },
   { COLLECT_NORMAL, L"uefi\\variables",          L"var list",            CollectVarList        },
   { COLLECT_NORMAL, L"uefi\\variable_usage",     L"var usage",           CollectVarUsage       },

@@ -55,7 +55,7 @@ Command line
         (acpi save / collect --full)
 [x] T04 firmware verify
         SHA256 of FV / FFS files vs. a reference manifest
-[ ] T05 AML parser
+[x] T05 AML parser
         Decode DSDT / SSDT: Device, Name, Method, _ADR, _HID
 [ ] T06 GPIO
         gpio list / dump / get <gpio> (read first, set later)
@@ -197,4 +197,4 @@ Opt-in hardware write (io write, UI write mode)
 Builds: IA32 / X64, DEBUG / RELEASE (GCC)
 
 Primary Focus:
-NEXT TASKS T05 - T12, then Phase 5 (PC-side analyzer).
+NEXT TASKS T06 - T12, then Phase 5 (PC-side analyzer).

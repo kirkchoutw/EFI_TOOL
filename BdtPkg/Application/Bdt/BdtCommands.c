@@ -539,6 +539,22 @@ BdtCmdAcpi (
   }
 
   //
+  // acpi aml | devices [signature [instance] | table file]
+  //
+  if ((IsSub (Argc, Argv, L"aml") || IsSub (Argc, Argv, L"devices")) && (Argc <= 3)) {
+    Instance = 0;
+    if ((Argc == 3) && EFI_ERROR (ParseNumberArg (Argv[2], &Instance))) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    BDT_RUN (
+      Context,
+      Label (L"acpi", Argc, Argv),
+      BdtAcpiAml ((Argc >= 2) ? Argv[1] : NULL, (UINTN)Instance, IsSub (Argc, Argv, L"devices"))
+      );
+  }
+
+  //
   // acpi diff <old dir> [new dir] [signature]; without new dir the live
   // tables are the new set.
   //
