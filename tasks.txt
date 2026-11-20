@@ -53,7 +53,7 @@ Command line
 [x] T03 acpi diff
         Compare live ACPI tables with a saved set
         (acpi save / collect --full)
-[ ] T04 firmware verify
+[x] T04 firmware verify
         SHA256 of FV / FFS files vs. a reference manifest
 [ ] T05 AML parser
         Decode DSDT / SSDT: Device, Name, Method, _ADR, _HID
@@ -197,4 +197,4 @@ Opt-in hardware write (io write, UI write mode)
 Builds: IA32 / X64, DEBUG / RELEASE (GCC)
 
 Primary Focus:
-NEXT TASKS T03 - T12, then Phase 5 (PC-side analyzer).
+NEXT TASKS T05 - T12, then Phase 5 (PC-side analyzer).

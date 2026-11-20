@@ -44,7 +44,8 @@ BDT.efi acpi list | dump <signature> [instance] | find <string> | validate | sav
 BDT.efi acpi diff <old dir> [new dir] [signature]
 BDT.efi smbios list | dump | type <type> | validate
 BDT.efi cpu info | cpuid [leaf [subleaf]] | msr <address> | mtrr | mca
-BDT.efi firmware fv | ffs [fv index] | find <guid>
+BDT.efi firmware fv | ffs [fv index] | find <guid> | hash [fv index]
+BDT.efi firmware manifest <file> | verify <file>
 BDT.efi security secureboot | pk | kek | db | dbx | dbt | dbr | tpm | pcr [index] | tcglog
 BDT.efi io mmio read <address> <length> [width]   | io mmio write <address> <value> [width] [--force]
 BDT.efi io pci read <BDF> <offset> [width]        | io pci write <BDF> <offset> <value> [width] [--force]
@@ -112,5 +113,12 @@ BdtPkg/
 - `acpi diff` compares tables saved by `acpi save` / `collect --full` with
   the live tables (or another saved set); tables are paired by signature and
   OEM Table ID, so reordered SSDTs still match.
+- `firmware manifest` writes the SHA-256 of every firmware volume (raw
+  volume) and FFS file (file contents) visible through FV2 to a text file;
+  `firmware verify` compares the running firmware with it and reports
+  CHANGED / MISSING / NEW entries. The result is PASS or FAIL, and FAIL
+  also sets a non-zero `%lasterror%` (EFI_SECURITY_VIOLATION) for scripts.
+  `collect --full` saves one as `system/firmware_manifest.txt`.
+  Manifest lines: `<FV|FFS> <fv> <guid> <type> <size> <sha256> <name>`.
 - Not implemented yet: `boot trace` (needs the planned BdtDxe driver),
-  `firmware verify`, GPIO, debug log, BdtDxe/BdtPei.
+  GPIO, debug log, BdtDxe/BdtPei.

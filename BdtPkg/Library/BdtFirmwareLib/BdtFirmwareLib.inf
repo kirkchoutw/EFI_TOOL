@@ -35,6 +35,7 @@
   DevicePathLib
   BdtLib
   BdtOutputLib
+  BdtFileLib
 
 [Protocols]
   gEfiFirmwareVolume2ProtocolGuid               ## CONSUMES

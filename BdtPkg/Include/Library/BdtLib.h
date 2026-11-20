@@ -145,4 +145,48 @@ BdtStriCmp (
   IN CONST CHAR16  *Second
   );
 
+//
+// SHA-256
+//
+#define BDT_SHA256_SIZE  32
+
+typedef struct {
+  UINT32    State[8];
+  UINT64    Length;
+  UINT8     Buffer[64];
+  UINTN     Used;
+} BDT_SHA256_CONTEXT;
+
+VOID
+EFIAPI
+BdtSha256Init (
+  OUT BDT_SHA256_CONTEXT  *Context
+  );
+
+VOID
+EFIAPI
+BdtSha256Update (
+  IN OUT BDT_SHA256_CONTEXT  *Context,
+  IN     CONST VOID          *Data,
+  IN     UINTN               Size
+  );
+
+VOID
+EFIAPI
+BdtSha256Final (
+  IN OUT BDT_SHA256_CONTEXT  *Context,
+  OUT    UINT8               Digest[BDT_SHA256_SIZE]
+  );
+
+/**
+  One shot SHA-256 of a buffer.
+**/
+VOID
+EFIAPI
+BdtSha256 (
+  IN  CONST VOID  *Data,
+  IN  UINTN       Size,
+  OUT UINT8       Digest[BDT_SHA256_SIZE]
+  );
+
 #endif

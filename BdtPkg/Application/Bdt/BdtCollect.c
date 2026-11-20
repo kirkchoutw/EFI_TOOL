@@ -82,6 +82,16 @@ CollectAcpiBinaries (
 
 STATIC
 EFI_STATUS
+CollectFirmwareManifest (
+  IN CONST CHAR16  *Root
+  )
+{
+  UnicodeSPrint (mBinaryPath, sizeof (mBinaryPath), L"%s\\system\\firmware_manifest.txt", Root);
+  return BdtFirmwareManifest (mBinaryPath);
+}
+
+STATIC
+EFI_STATUS
 CollectVarBinaries (
   IN CONST CHAR16  *Root
   )
@@ -99,6 +109,7 @@ STATIC CONST BDT_COLLECT_ITEM  mItems[] = {
   { COLLECT_NORMAL, L"system\\smbios_validate",  L"smbios validate",     CollectSmbiosValidate },
   { COLLECT_NORMAL, L"system\\firmware",         L"firmware fv",         CollectFirmwareFv     },
   { COLLECT_FULL,   L"system\\ffs",              L"firmware ffs",        CollectFirmwareFfs    },
+  { COLLECT_FULL,   L"system\\firmware_hash",    L"firmware manifest",   CollectFirmwareManifest },
   { COLLECT_QUICK,  L"boot\\bootorder",          L"boot order",          CollectBootOrder      },
   { COLLECT_NORMAL, L"boot\\bootoptions",        L"boot option",         CollectBootOptions    },
   { COLLECT_NORMAL, L"boot\\timing",             L"boot timing",         CollectBootTiming     },

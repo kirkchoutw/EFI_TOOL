@@ -79,7 +79,8 @@ CONST BDT_COMMAND  gBdtCommands[] = {
   },
   {
     L"firmware",   L"Firmware volumes and FFS files",
-    L"firmware fv | ffs [fv index] | find <guid>",
+    L"firmware fv | ffs [fv index] | find <guid> | hash [fv index]\r\n"
+    L"         firmware manifest <file> | verify <file>   (SHA-256 of FVs / FFS files)",
     BdtCmdFirmware
   },
   {
@@ -320,6 +321,10 @@ ShellAppMain (
     PrintUsage (Command);
   } else if (Status == EFI_ABORTED) {
     BdtOutError (L"Cancelled, nothing written");
+  } else if (Status == EFI_SECURITY_VIOLATION) {
+    //
+    // A verification that failed; the result has already been printed.
+    //
   } else if (EFI_ERROR (Status)) {
     BdtOutError (L"%s failed: %s", Command->Name, BdtStatusName (Status));
   }

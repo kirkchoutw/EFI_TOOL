@@ -684,9 +684,21 @@ BdtCmdFirmware (
     BDT_RUN (Context, Label (L"firmware", Argc, Argv), BdtFirmwareFind (&Guid));
   }
 
-  if (IsSub (Argc, Argv, L"verify")) {
-    BdtOutError (L"firmware verify is not implemented yet (needs a reference hash manifest)");
-    return EFI_UNSUPPORTED;
+  if (IsSub (Argc, Argv, L"hash") && (Argc <= 2)) {
+    FvIndex = 0;
+    if ((Argc == 2) && EFI_ERROR (ParseNumberArg (Argv[1], &FvIndex))) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    BDT_RUN (Context, Label (L"firmware", Argc, Argv), BdtFirmwareHash ((UINTN)FvIndex));
+  }
+
+  if (IsSub (Argc, Argv, L"manifest") && (Argc == 2)) {
+    BDT_RUN (Context, Label (L"firmware", Argc, Argv), BdtFirmwareManifest (Argv[1]));
+  }
+
+  if (IsSub (Argc, Argv, L"verify") && (Argc == 2)) {
+    BDT_RUN (Context, Label (L"firmware", Argc, Argv), BdtFirmwareVerify (Argv[1]));
   }
 
   return EFI_INVALID_PARAMETER;
