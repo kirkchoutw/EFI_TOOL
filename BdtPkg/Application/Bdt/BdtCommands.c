@@ -538,9 +538,29 @@ BdtCmdAcpi (
     BDT_RUN (Context, Label (L"acpi", Argc, Argv), BdtAcpiSaveTables (Argv[1]));
   }
 
-  if (IsSub (Argc, Argv, L"diff")) {
-    BdtOutError (L"acpi diff is not implemented yet; save tables with \"acpi save\" and compare on the PC");
-    return EFI_UNSUPPORTED;
+  //
+  // acpi diff <old dir> [new dir] [signature]; without new dir the live
+  // tables are the new set.
+  //
+  if (IsSub (Argc, Argv, L"diff") && (Argc >= 2) && (Argc <= 4)) {
+    if (Argc == 2) {
+      BDT_RUN (Context, Label (L"acpi", Argc, Argv), BdtAcpiDiff (Argv[1], NULL, NULL));
+    }
+
+    if (Argc == 4) {
+      BDT_RUN (Context, Label (L"acpi", Argc, Argv), BdtAcpiDiff (Argv[1], Argv[2], Argv[3]));
+    }
+
+    if (ShellIsDirectory (Argv[2]) == EFI_SUCCESS) {
+      BDT_RUN (Context, Label (L"acpi", Argc, Argv), BdtAcpiDiff (Argv[1], Argv[2], NULL));
+    }
+
+    if (StrLen (Argv[2]) == 4) {
+      BDT_RUN (Context, Label (L"acpi", Argc, Argv), BdtAcpiDiff (Argv[1], NULL, Argv[2]));
+    }
+
+    BdtOutError (L"'%s' is neither a directory nor a table signature", Argv[2]);
+    return EFI_INVALID_PARAMETER;
   }
 
   return EFI_INVALID_PARAMETER;

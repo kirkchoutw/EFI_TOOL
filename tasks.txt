@@ -5,8 +5,10 @@ inspect, diagnose, and collect system information.
 
 PROJECT GOAL
 
-Provide a lightweight, read-only EFI toolkit for common
-BIOS/UEFI debugging tasks.
+Provide a lightweight EFI toolkit for common BIOS/UEFI
+debugging tasks. Read-only by default; hardware writes
+(PCI config / MMIO / I/O port / MSR) are opt-in:
+io ... write asks [y/N] (or --force), the UI needs F2.
 
 CORE FEATURES
 
@@ -37,6 +39,45 @@ MVP
 [x] SMBIOS dump
 [x] Basic diagnostic collection
 [x] JSON output
+
+NEXT TASKS
+
+Documentation
+[x] T01 Update PROJECT GOAL / OUT OF SCOPE
+        Toolkit can now write PCI / MMIO / I/O / MSR
+        (opt-in); flash and UEFI variables are never written
+[x] T02 Update STATUS
+        Version, current focus, what is done
+
+Command line
+[x] T03 acpi diff
+        Compare live ACPI tables with a saved set
+        (acpi save / collect --full)
+[ ] T04 firmware verify
+        SHA256 of FV / FFS files vs. a reference manifest
+[ ] T05 AML parser
+        Decode DSDT / SSDT: Device, Name, Method, _ADR, _HID
+[ ] T06 GPIO
+        gpio list / dump / get <gpio> (read first, set later)
+        Platform specific: define a pluggable GPIO backend
+[ ] T07 Debug log
+        log show / clear / export / summary
+
+Drivers
+[ ] T08 BdtDxe driver
+        Boot / variable / protocol monitor, debug logger;
+        publishes data that BDT.efi reads
+[ ] T09 boot trace          (needs T08)
+        Driver load order and timing recorded by BdtDxe
+[ ] T10 var watch <name>    (needs T08)
+        Record variable changes during boot
+[ ] T11 BdtPei module
+        PEI timing, HOB dump, early boot checkpoints
+
+Portability
+[ ] T12 AARCH64 build
+        Split x86-only code (CPUID / MSR / MTRR / MCA /
+        I/O port) behind arch checks, add AARCH64 to the DSC
 
 COMMAND EXAMPLES
 
@@ -117,6 +158,7 @@ OUT OF SCOPE
 Firmware flashing
 
 Firmware modification
+(SPI flash / FV contents; UEFI variables are never written)
 
 Security bypass
 
@@ -148,5 +190,11 @@ STATUS
 
 Current Version: 0.1
 
+Done:
+MVP and Phase 1 - 4 (all CORE FEATURES)
+Full screen UI (BDT.efi ui)
+Opt-in hardware write (io write, UI write mode)
+Builds: IA32 / X64, DEBUG / RELEASE (GCC)
+
 Primary Focus:
-Build the core framework and MVP commands first.
+NEXT TASKS T03 - T12, then Phase 5 (PC-side analyzer).

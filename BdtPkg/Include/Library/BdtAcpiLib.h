@@ -40,4 +40,14 @@ EFI_STATUS EFIAPI BdtAcpiValidate (VOID);
 **/
 EFI_STATUS EFIAPI BdtAcpiSaveTables (IN CONST CHAR16 *Directory);
 
+/**
+  Compare two sets of ACPI tables.
+
+  @param[in] OldDir     Directory written by BdtAcpiSaveTables (old set).
+  @param[in] NewDir     Directory for the new set, or NULL for the live tables.
+  @param[in] Signature  Optional 4 character signature: show byte level
+                        differences of that table only.
+**/
+EFI_STATUS EFIAPI BdtAcpiDiff (IN CONST CHAR16 *OldDir, IN CONST CHAR16 *NewDir OPTIONAL, IN CONST CHAR16 *Signature OPTIONAL);
+
 #endif

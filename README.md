@@ -41,6 +41,7 @@ BDT.efi handle list | info <index> | protocol <guid> | tree
 BDT.efi protocol list | find <guid>
 BDT.efi devicepath list | decode <handle index>
 BDT.efi acpi list | dump <signature> [instance] | find <string> | validate | save <dir>
+BDT.efi acpi diff <old dir> [new dir] [signature]
 BDT.efi smbios list | dump | type <type> | validate
 BDT.efi cpu info | cpuid [leaf [subleaf]] | msr <address> | mtrr | mca
 BDT.efi firmware fv | ffs [fv index] | find <guid>
@@ -108,5 +109,8 @@ BdtPkg/
   returns an error instead of hanging (when the CPU arch protocol allows it).
 - `boot timing` needs the platform to publish the ACPI FPDT
   (FirmwarePerformanceDxe + a PerformanceLib).
+- `acpi diff` compares tables saved by `acpi save` / `collect --full` with
+  the live tables (or another saved set); tables are paired by signature and
+  OEM Table ID, so reordered SSDTs still match.
 - Not implemented yet: `boot trace` (needs the planned BdtDxe driver),
-  `acpi diff`, `firmware verify`, GPIO, debug log, BdtDxe/BdtPei.
+  `firmware verify`, GPIO, debug log, BdtDxe/BdtPei.

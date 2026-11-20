@@ -63,7 +63,8 @@ CONST BDT_COMMAND  gBdtCommands[] = {
   },
   {
     L"acpi",       L"ACPI tables",
-    L"acpi list | dump <signature> [instance] | find <string> | validate | save <directory>",
+    L"acpi list | dump <signature> [instance] | find <string> | validate | save <directory>\r\n"
+    L"         acpi diff <old dir> [new dir] [signature]   (no new dir: compare with live tables)",
     BdtCmdAcpi
   },
   {

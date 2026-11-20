@@ -141,3 +141,95 @@ BdtFileReadAll (
   *Size   = ReadSize;
   return EFI_SUCCESS;
 }
+
+EFI_STATUS
+EFIAPI
+BdtFileListDirectory (
+  IN  CONST CHAR16  *Path,
+  OUT CHAR16        ***Names,
+  OUT UINTN         *Count
+  )
+{
+  EFI_STATUS         Status;
+  SHELL_FILE_HANDLE  Dir;
+  EFI_FILE_INFO      *Info;
+  BOOLEAN            NoFile;
+  CHAR16             **List;
+  CHAR16             **NewList;
+  UINTN              Size;
+  UINTN              Used;
+
+  *Names = NULL;
+  *Count = 0;
+  if (ShellIsDirectory (Path) != EFI_SUCCESS) {
+    return EFI_NOT_FOUND;
+  }
+
+  Status = ShellOpenFileByName (Path, &Dir, EFI_FILE_MODE_READ, 0);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Size = 32;
+  Used = 0;
+  List = AllocateZeroPool (Size * sizeof (CHAR16 *));
+  if (List == NULL) {
+    ShellCloseFile (&Dir);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  //
+  // Walk to the end: ShellFindNextFile frees Info after the last entry.
+  //
+  NoFile = FALSE;
+  for (Status = ShellFindFirstFile (Dir, &Info);
+       !EFI_ERROR (Status) && (Info != NULL) && !NoFile;
+       Status = ShellFindNextFile (Dir, Info, &NoFile))
+  {
+    if ((Info->Attribute & EFI_FILE_DIRECTORY) != 0) {
+      continue;
+    }
+
+    if (Used == Size) {
+      NewList = ReallocatePool (Size * sizeof (CHAR16 *), Size * 2 * sizeof (CHAR16 *), List);
+      if (NewList == NULL) {
+        continue;
+      }
+
+      List  = NewList;
+      Size *= 2;
+    }
+
+    List[Used] = AllocateCopyPool (StrSize (Info->FileName), Info->FileName);
+    if (List[Used] != NULL) {
+      Used++;
+    }
+  }
+
+  ShellCloseFile (&Dir);
+  *Names = List;
+  *Count = Used;
+  return EFI_SUCCESS;
+}
+
+VOID
+EFIAPI
+BdtFileFreeList (
+  IN CHAR16  **Names,
+  IN UINTN   Count
+  )
+{
+  UINTN  Index;
+
+  if (Names == NULL) {
+    return;
+  }
+
+  for (Index = 0; Index < Count; Index++) {
+    if (Names[Index] != NULL) {
+      FreePool (Names[Index]);
+    }
+  }
+
+  FreePool (Names);
+}

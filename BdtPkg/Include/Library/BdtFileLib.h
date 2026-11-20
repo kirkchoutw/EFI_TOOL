@@ -66,4 +66,27 @@ BdtFileReadAll (
   OUT UINTN         *Size
   );
 
+/**
+  List the regular files (not sub directories) of a directory.
+
+  @param[in]  Path   Directory.
+  @param[out] Names  Allocated array of allocated file names; free with
+                     BdtFileFreeList.
+  @param[out] Count  Number of names.
+**/
+EFI_STATUS
+EFIAPI
+BdtFileListDirectory (
+  IN  CONST CHAR16  *Path,
+  OUT CHAR16        ***Names,
+  OUT UINTN         *Count
+  );
+
+VOID
+EFIAPI
+BdtFileFreeList (
+  IN CHAR16  **Names,
+  IN UINTN   Count
+  );
+
 #endif
