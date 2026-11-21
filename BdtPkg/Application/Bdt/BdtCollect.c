@@ -48,6 +48,8 @@ STATIC EFI_STATUS CollectBootOrder (IN CONST CHAR16 *Root) { return BdtBootOrder
 STATIC EFI_STATUS CollectBootOptions (IN CONST CHAR16 *Root) { return BdtBootOptions (); }
 STATIC EFI_STATUS CollectBootTiming (IN CONST CHAR16 *Root) { return BdtBootTiming (); }
 STATIC EFI_STATUS CollectBootModules (IN CONST CHAR16 *Root) { return BdtBootModules (); }
+STATIC EFI_STATUS CollectLogSummary (IN CONST CHAR16 *Root) { return BdtLogSummary (); }
+STATIC EFI_STATUS CollectLog (IN CONST CHAR16 *Root) { return BdtLogShow (0); }
 STATIC EFI_STATUS CollectPciList (IN CONST CHAR16 *Root) { return BdtPciList (); }
 STATIC EFI_STATUS CollectPciTree (IN CONST CHAR16 *Root) { return BdtPciTree (); }
 STATIC EFI_STATUS CollectPciAer (IN CONST CHAR16 *Root) { return BdtPciAer (NULL); }
@@ -116,6 +118,8 @@ STATIC CONST BDT_COLLECT_ITEM  mItems[] = {
   { COLLECT_NORMAL, L"boot\\bootoptions",        L"boot option",         CollectBootOptions    },
   { COLLECT_NORMAL, L"boot\\timing",             L"boot timing",         CollectBootTiming     },
   { COLLECT_NORMAL, L"boot\\modules",            L"boot modules",        CollectBootModules    },
+  { COLLECT_NORMAL, L"boot\\debug_log_summary",  L"log summary",         CollectLogSummary     },
+  { COLLECT_FULL,   L"boot\\debug_log",          L"log show",            CollectLog            },
   { COLLECT_QUICK,  L"pci\\devices",             L"pci list",            CollectPciList        },
   { COLLECT_QUICK,  L"pci\\tree",                L"pci tree",            CollectPciTree        },
   { COLLECT_NORMAL, L"pci\\aer",                 L"pci aer",             CollectPciAer         },

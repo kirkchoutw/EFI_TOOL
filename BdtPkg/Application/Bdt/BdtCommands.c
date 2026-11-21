@@ -990,3 +990,48 @@ BdtCmdIo (
 
   return EFI_INVALID_PARAMETER;
 }
+
+//
+// ---------------------------------------------------------------------------
+// log
+// ---------------------------------------------------------------------------
+//
+
+EFI_STATUS
+BdtCmdLog (
+  IN BDT_CONTEXT  *Context,
+  IN UINTN        Argc,
+  IN CHAR16       **Argv
+  )
+{
+  UINT64   Last;
+  BOOLEAN  Force;
+
+  Force = TakeForce (&Argc, Argv);
+  if (IsSub (Argc, Argv, L"info") && (Argc == 1)) {
+    BDT_RUN (Context, Label (L"log", Argc, Argv), BdtLogInfo ());
+  }
+
+  if (IsSub (Argc, Argv, L"show") && (Argc <= 2)) {
+    Last = 0;
+    if ((Argc == 2) && EFI_ERROR (ParseNumberArg (Argv[1], &Last))) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    BDT_RUN (Context, Label (L"log", Argc, Argv), BdtLogShow ((UINTN)Last));
+  }
+
+  if (IsSub (Argc, Argv, L"summary") && (Argc == 1)) {
+    BDT_RUN (Context, Label (L"log", Argc, Argv), BdtLogSummary ());
+  }
+
+  if (IsSub (Argc, Argv, L"export") && (Argc == 2)) {
+    BDT_RUN (Context, Label (L"log", Argc, Argv), BdtLogExport (Argv[1]));
+  }
+
+  if (IsSub (Argc, Argv, L"clear") && (Argc == 1)) {
+    BDT_RUN (Context, Label (L"log", Argc, Argv), BdtLogClear (Force));
+  }
+
+  return EFI_INVALID_PARAMETER;
+}

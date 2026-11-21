@@ -90,6 +90,11 @@ CONST BDT_COMMAND  gBdtCommands[] = {
     BdtCmdSecurity
   },
   {
+    L"log",        L"Firmware debug log (AdvancedLogger / OVMF MemDebugLog)",
+    L"log info | show [last lines] | summary | export <file> | clear [--force]",
+    BdtCmdLog
+  },
+  {
     L"io",         L"Raw register read / write",
     L"io mmio read <address> <length> [width] | io mmio write <address> <value> [width]\r\n"
     L"         io pci read <BDF> <offset> [width]    | io pci write <BDF> <offset> <value> [width]\r\n"

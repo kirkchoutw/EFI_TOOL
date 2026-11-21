@@ -57,11 +57,12 @@ Command line
         SHA256 of FV / FFS files vs. a reference manifest
 [x] T05 AML parser
         Decode DSDT / SSDT: Device, Name, Method, _ADR, _HID
-[ ] T06 GPIO
+[-] T06 GPIO                (skipped for now)
         gpio list / dump / get <gpio> (read first, set later)
         Platform specific: define a pluggable GPIO backend
-[ ] T07 Debug log
+[x] T07 Debug log
         log show / clear / export / summary
+        Backends: Project Mu AdvancedLogger, OVMF MemDebugLog
 
 Drivers
 [ ] T08 BdtDxe driver
@@ -197,4 +198,4 @@ Opt-in hardware write (io write, UI write mode)
 Builds: IA32 / X64, DEBUG / RELEASE (GCC)
 
 Primary Focus:
-NEXT TASKS T06 - T12, then Phase 5 (PC-side analyzer).
+NEXT TASKS T08 - T12 (T06 skipped), then Phase 5 (PC-side analyzer).

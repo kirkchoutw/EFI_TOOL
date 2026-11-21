@@ -34,6 +34,7 @@
   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
   BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
+  TimerLib|MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
   DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
   DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibOptionalDevicePathProtocol.inf
   FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
@@ -65,6 +66,7 @@
   BdtSecurityLib|BdtPkg/Library/BdtSecurityLib/BdtSecurityLib.inf
   BdtBootLib|BdtPkg/Library/BdtBootLib/BdtBootLib.inf
   BdtFirmwareLib|BdtPkg/Library/BdtFirmwareLib/BdtFirmwareLib.inf
+  BdtLogLib|BdtPkg/Library/BdtLogLib/BdtLogLib.inf
 
 [PcdsFixedAtBuild]
   gEfiMdePkgTokenSpaceGuid.PcdUefiLibMaxPrintBufferSize|16000
@@ -83,5 +85,6 @@
   BdtPkg/Library/BdtSecurityLib/BdtSecurityLib.inf
   BdtPkg/Library/BdtBootLib/BdtBootLib.inf
   BdtPkg/Library/BdtFirmwareLib/BdtFirmwareLib.inf
+  BdtPkg/Library/BdtLogLib/BdtLogLib.inf
 
   BdtPkg/Application/Bdt/Bdt.inf

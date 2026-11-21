@@ -54,3 +54,6 @@
   ##  @libraryclass  BdtFirmwareLib
   BdtFirmwareLib            |Include/Library/BdtFirmwareLib.h
 
+  ##  @libraryclass  BdtLogLib
+  BdtLogLib                 |Include/Library/BdtLogLib.h
+

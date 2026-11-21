@@ -1,0 +1,46 @@
+## @file
+#  BdtLogLib - Firmware debug log (AdvancedLogger / MemDebugLog backends).
+#
+#  Copyright (c) 2026, Kirk Chou. All rights reserved.<BR>
+#  SPDX-License-Identifier: MIT
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010017
+  BASE_NAME                      = BdtLogLib
+  FILE_GUID                      = 6E2B1C0A-5E7D-4C8B-9B3F-3D1A7C2E9F41
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 0.1
+  LIBRARY_CLASS                  = BdtLogLib|UEFI_APPLICATION UEFI_DRIVER DXE_DRIVER
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 ARM AARCH64 RISCV64 LOONGARCH64
+#
+
+[Sources]
+  BdtLogInternal.h
+  BdtLogLib.c
+  BdtLogMemDebug.c
+  BdtLogAdvLogger.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ShellPkg/ShellPkg.dec
+  BdtPkg/BdtPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  PrintLib
+  ShellLib
+  SynchronizationLib
+  UefiBootServicesTableLib
+  UefiLib
+  UefiRuntimeServicesTableLib
+  BdtLib
+  BdtOutputLib
+  BdtFileLib
+
+[Guids]
+  gEfiHobListGuid                               ## CONSUMES ## SystemTable

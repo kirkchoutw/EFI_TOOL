@@ -52,6 +52,7 @@ BDT.efi io mmio read <address> <length> [width]   | io mmio write <address> <val
 BDT.efi io pci read <BDF> <offset> [width]        | io pci write <BDF> <offset> <value> [width] [--force]
 BDT.efi io port read <port> [width]               | io port write <port> <value> [width] [--force]
 BDT.efi io msr read <index>                       | io msr write <index> <value> [--force]
+BDT.efi log info | show [last lines] | summary | export <file> | clear [--force]
 BDT.efi collect [--quick | --full] [--output <directory>]
 BDT.efi ui
 ```
@@ -97,7 +98,7 @@ BdtPkg/
   Application/Bdt/    BDT.efi (command parser, system, collect)
   Library/            BdtLib, BdtOutputLib, BdtFileLib, BdtPciLib, BdtMemoryLib,
                       BdtVariableLib, BdtHandleLib, BdtAcpiLib, BdtSmbiosLib,
-                      BdtCpuLib, BdtSecurityLib, BdtBootLib, BdtFirmwareLib
+                      BdtCpuLib, BdtSecurityLib, BdtBootLib, BdtFirmwareLib, BdtLogLib
 ```
 
 ### Notes
@@ -133,5 +134,17 @@ BdtPkg/
   Nothing is evaluated: method results and computed values are not shown.
   AML that cannot be followed is reported under `errors` with its offset;
   parsing continues after the enclosing block.
+- `log` reads the firmware debug log from memory. UEFI has no standard
+  log buffer, so pluggable backends (`BdtPkg/Library/BdtLogLib`) support
+  the formats firmware uses: Project Mu AdvancedLogger (found through its
+  protocol, the `AdvLoggerLocator` variable or its HOB; per message debug
+  level, boot phase and time stamp) and edk2 OVMF MemDebugLog
+  (`DEBUG_TO_MEM=TRUE`, circular text buffer). `log info` shows what was
+  found; the first backend found is used. `log show` prints the log as the
+  firmware wrote it (CSV / JSON add phase, level and ms), `summary` counts
+  ASSERTs / errors / warnings (debug level, or "error" / "fail" / "warning"
+  in the text for logs without levels), `export` writes plain text and
+  `clear` empties the buffer (asks `[y/N]` unless `--force`).
+  `collect` saves `boot/debug_log_summary` (`--full`: `boot/debug_log`).
 - Not implemented yet: `boot trace` (needs the planned BdtDxe driver),
-  GPIO, debug log, BdtDxe/BdtPei.
+  GPIO, BdtDxe/BdtPei.

@@ -57,3 +57,4 @@
   BdtSecurityLib
   BdtBootLib
   BdtFirmwareLib
+  BdtLogLib
